@@ -51,19 +51,11 @@
                 <div class="text-xs text-gray-500" id="sideUserRole">--</div>
             </div>
         </div>
-        nav class="flex-grow px-4 space-y-1 overflow-y-auto no-scrollbar">
-            <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-50 text-blue-700 font-bold">
-                <i class="fas fa-th-large w-5"></i> 課程總覽
-            </a>
-            <a href="remedial.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition">
-                <i class="fas fa-book-medical w-5"></i> 錯題補救
-            </a>
-            <a href="analysis.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition">
-                <i class="fas fa-chart-pie w-5"></i> 學習分析
-            </a>
-            <a href="forum.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition">
-                <i class="fas fa-comments w-5"></i> 解題論壇
-            </a>
+        <nav class="flex-grow px-4 space-y-1">
+            <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-50 transition"><i class="fas fa-th-large w-5"></i> 課程總覽</a>
+            <a href="analysis.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-50 transition"><i class="fas fa-chart-pie w-5"></i> 學習分析</a>
+            <a href="remedial.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-50 transition"><i class="fas fa-book-medical w-5"></i> 錯題補救</a>
+            <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-50 text-blue-700 font-bold shadow-sm"><i class="fas fa-comments w-5"></i> 解題論壇</a>
         </nav>
         <div class="p-4 border-t border-gray-200">
             <button onclick="Auth.logout()" class="w-full flex items-center justify-center gap-2 text-gray-500 hover:text-red-500 py-2 transition"><i class="fas fa-sign-out-alt"></i> 登出</button>
