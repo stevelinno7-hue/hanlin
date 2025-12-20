@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>教師 Dashboard｜AI 解題系統</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+body{background:#f4f6f8;font-family:"Noto Sans TC",sans-serif}
+canvas{background:#fff;border-radius:12px}
+</style>
+</head>
+
+<body class="p-6">
+
+<!-- 角色切換 -->
+<div class="flex gap-3 mb-6">
+    <button onclick="switchView('student')" class="px-4 py-2 bg-blue-600 text-white rounded">學生介面</button>
+    <button onclick="switchView('teacher')" class="px-4 py-2 bg-indigo-600 text-white rounded">教師 Dashboard</button>
+</div>
+
+<!-- 學生介面 -->
+<section id="studentView">
+    <div class="bg-white p-6 rounded shadow">
+        <h2 class="font-bold text-lg mb-2">學生解題畫面</h2>
+        <p class="text-gray-600 text-sm">
+            這裡是學生看到的 AI 解題 / 論壇畫面（略）
+        </p>
+    </div>
+</section>
+
+<!-- 教師 Dashboard -->
+<section id="teacherDashboard" class="hidden space-y-6">
+
+    <h2 class="font-bold text-xl">📊 教師教學分析 Dashboard</h2>
+
+    <!-- 圖表區 -->
+    <div class="grid md:grid-cols-2 gap-6">
+
+        <div class="p-4">
+            <h3 class="font-bold mb-2">題型錯誤分布（長條圖）</h3>
+            <canvas id="barChart" width="400" height="260"></canvas>
+        </div>
+
+        <div class="p-4">
+            <h3 class="font-bold mb-2">單元錯誤比例（圓餅圖）</h3>
+            <canvas id="pieChart" width="400" height="260"></canvas>
+        </div>
+
+    </div>
+
+    <!-- 教學解讀 -->
+    <div class="bg-white p-6 rounded shadow">
+        <h3 class="font-bold mb-2">🧑‍🏫 教師解讀</h3>
+        <ul class="list-disc ml-5 text-sm text-gray-700">
+            <li>計算題錯誤比例偏高，學生公式理解不足</li>
+            <li>一次函數單元為主要失分來源</li>
+            <li>建議進行概念導向補救教學</li>
+        </ul>
+    </div>
+
+</section>
+
+<script>
+/* ========= 假資料 ========= */
+const errorByType = {
+    "選擇題": 12,
+    "計算題": 28,
+    "申論題": 18
+};
+
+const errorByUnit = {
+    "一次函數": 30,
+    "微分": 20,
+    "牛頓運動": 8,
+    "化學反應": 6
+};
+
+/* ========= 角色切換 ========= */
+function switchView(role){
+    studentView.classList.toggle("hidden", role !== "student");
+    teacherDashboard.classList.toggle("hidden", role !== "teacher");
+    if(role === "teacher"){
+        drawBarChart();
+        drawPieChart();
+    }
+}
+
+/* ========= Canvas 長條圖 ========= */
+function drawBarChart(){
+    const ctx = barChart.getContext("2d");
+    ctx.clearRect(0,0,400,260);
+
+    const values = Object.values(errorByType);
+    const labels = Object.keys(errorByType);
+    const max = Math.max(...values);
+    const barWidth = 60;
+
+    values.forEach((v,i)=>{
+        const h = (v/max)*180;
+        ctx.fillStyle = "#60a5fa";
+        ctx.fillRect(60+i*100,220-h,barWidth,h);
+        ctx.fillStyle="#000";
+        ctx.fillText(labels[i],60+i*100,240);
+        ctx.fillText(v,80+i*100,210-h);
+    });
+}
+
+/* ========= Canvas 圓餅圖 ========= */
+function drawPieChart(){
+    const ctx = pieChart.getContext("2d");
+    ctx.clearRect(0,0,400,260);
+
+    const total = Object.values(errorByUnit).reduce((a,b)=>a+b,0);
+    let start = 0;
+    const colors = ["#93c5fd","#60a5fa","#3b82f6","#2563eb"];
+
+    Object.entries(errorByUnit).forEach(([label,val],i)=>{
+        const slice = (val/total)*Math.PI*2;
+        ctx.beginPath();
+        ctx.moveTo(200,130);
+        ctx.fillStyle = colors[i%colors.length];
+        ctx.arc(200,130,90,start,start+slice);
+        ctx.fill();
+        start += slice;
+    });
+}
+</script>
+
+</body>
+</html>
