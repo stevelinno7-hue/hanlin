@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>翰林雲端學院</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <script src="assets/js/page_content.js"></script>
+</head>
+<body class="bg-gray-50 font-sans text-gray-800 flex flex-col min-h-screen">
+
+    <nav class="bg-white shadow px-6 py-4 flex justify-between items-center sticky top-0 z-50">
+        <div class="flex items-center gap-3 cursor-pointer" onclick="window.location.href='index.html'">
+            <div class="w-8 h-8 bg-blue-600 rounded text-white flex items-center justify-center font-bold">翰</div>
+            <span class="text-xl font-bold text-gray-700">雲端學院</span>
+        </div>
+        <a href="index.html" class="text-gray-500 hover:text-blue-600 font-bold text-sm">
+            <i class="fas fa-home mr-1"></i> 回首頁
+        </a>
+    </nav>
+
+    <main class="flex-grow max-w-4xl mx-auto w-full p-6 md:p-12">
+        <div class="bg-white p-8 md:p-12 rounded-2xl shadow-sm min-h-[500px]">
+            
+            <h1 id="pageTitle" class="text-3xl font-extrabold text-gray-900 mb-8 border-b pb-4">
+                載入中...
+            </h1>
+
+            <div id="pageContent" class="prose max-w-none text-gray-600 leading-relaxed space-y-4">
+                </div>
+
+        </div>
+    </main>
+
+    <footer class="bg-gray-800 text-gray-400 py-8 text-center text-sm mt-auto">
+        <p>&copy; 2025 翰林雲端學院. All Rights Reserved.</p>
+    </footer>
+
+    <script>
+        // 解析 URL 參數 (例如 ?id=privacy)
+        const urlParams = new URLSearchParams(window.location.search);
+        const pageId = urlParams.get('id');
+
+        // 讀取資料庫
+        const data = window.PageContent[pageId];
+
+        if (data) {
+            document.title = `${data.title} - 翰林雲端學院`;
+            document.getElementById('pageTitle').textContent = data.title;
+            document.getElementById('pageContent').innerHTML = data.content;
+        } else {
+            // 404 處理
+            document.getElementById('pageTitle').textContent = "頁面不存在";
+            document.getElementById('pageContent').innerHTML = `
+                <div class="text-center py-10">
+                    <i class="fas fa-exclamation-circle text-4xl text-gray-300 mb-4"></i>
+                    <p>很抱歉，您尋找的頁面不存在或已被移除。</p>
+                    <a href="index.html" class="text-blue-600 hover:underline mt-4 block">返回首頁</a>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

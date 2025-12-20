@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>學習儀表板 - 翰林雲端學院</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f1f5f9; }
+        .sidebar-glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        .course-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid #e2e8f0; }
+        .course-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); border-color: #cbd5e1; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        
+        /* 載入動畫 */
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .loader { border-top-color: #3b82f6; -webkit-animation: spin 1s linear infinite; animation: spin 1s linear infinite; }
+    </style>
+
+    <script src="mockdata/users.js"></script>
+    <script src="assets/js/auth.js"></script>
+    
+    <script src="mockdata/curriculum_integrated.js"></script>
+
+    <script>
+        const currentUser = Auth.requireLogin();
+
+        window.initCurriculumData = function() {
+            let all = [];
+            if (window.CurriculumLibrary && window.CurriculumLibrary.data) {
+                const dataStore = window.CurriculumLibrary.data;
+                Object.keys(dataStore).forEach(key => {
+                    const subjectData = dataStore[key];
+                    if (Array.isArray(subjectData)) {
+                        all = all.concat(subjectData);
+                    }
+                });
+            }
+            window.Curriculum108 = all;
+        };
+    </script>
+</head>
+<body class="h-screen flex overflow-hidden">
+
+    <aside class="w-72 sidebar-glass border-r border-gray-200 hidden lg:flex flex-col z-20">
+        <div class="h-16 flex items-center px-6 border-b border-gray-100">
+            <div class="w-8 h-8 bg-blue-600 rounded text-white flex items-center justify-center font-bold text-lg mr-3 shadow-lg">翰</div>
+            <span class="text-xl font-bold text-slate-800 tracking-wide">雲端學院</span>
+        </div>
+
+        <div class="p-6">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-center">
+                <div class="w-16 h-16 mx-auto bg-blue-50 rounded-full flex items-center justify-center text-2xl text-blue-600 mb-3 border-2 border-white shadow-sm">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <h3 class="font-bold text-gray-800 text-lg" id="sideUserName">--</h3>
+                <div class="text-xs text-gray-500 mb-3" id="sideUserRole">--</div>
+                <button onclick="openProfileModal()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1 rounded-full transition">
+                    <i class="fas fa-pen mr-1"></i> 編輯年級
+                </button>
+            </div>
+        </div>
+
+        <nav class="flex-grow px-4 space-y-1 overflow-y-auto no-scrollbar">
+            <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-50 text-blue-700 font-bold">
+                <i class="fas fa-th-large w-5"></i> 課程總覽
+            </a>
+            <a href="remedial.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition">
+                <i class="fas fa-book-medical w-5"></i> 錯題補救
+            </a>
+            <a href="analysis.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition">
+                <i class="fas fa-chart-pie w-5"></i> 學習分析
+            </a>
+            <a href="forum.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition">
+                <i class="fas fa-comments w-5"></i> 解題論壇
+            </a>
+        </nav>
+
+        <div class="p-4 border-t border-gray-200">
+            <button onclick="Auth.logout()" class="w-full flex items-center justify-center gap-2 text-gray-500 hover:text-red-500 py-2 transition">
+                <i class="fas fa-sign-out-alt"></i> 登出系統
+            </button>
+        </div>
+    </aside>
+
+    <main class="flex-grow flex flex-col h-full relative">
+        
+        <header class="lg:hidden h-16 bg-white shadow-sm flex items-center justify-between px-4 z-20">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-blue-600 rounded text-white flex items-center justify-center font-bold">翰</div>
+                <span class="font-bold text-gray-800">雲端學院</span>
+            </div>
+            <button class="text-gray-600 p-2"><i class="fas fa-bars text-xl"></i></button>
+        </header>
+
+        <div class="bg-white border-b border-gray-200 p-6 z-10 shadow-sm sticky top-0">
+            <div class="max-w-7xl mx-auto">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-800">歡迎回來，<span id="topUserName">同學</span> 👋</h1>
+                        <p class="text-sm text-gray-500 mt-1">今天想加強哪個科目呢？</p>
+                    </div>
+                    
+                    <div class="mt-4 md:mt-0 flex gap-2">
+                        <div class="bg-gray-100 p-1 rounded-lg flex text-sm font-bold">
+                            <button onclick="setStage('high_school')" id="btnHigh" class="px-4 py-1.5 rounded-md transition shadow-sm bg-white text-gray-800">高中</button>
+                            <button onclick="setStage('junior_high')" id="btnJunior" class="px-4 py-1.5 rounded-md transition text-gray-500 hover:text-gray-700">國中</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap gap-4 items-center">
+                    
+                    <div class="relative group">
+                        <i class="fas fa-book absolute left-3 top-3 text-gray-400"></i>
+                        <select id="filterSubject" onchange="applyFilters()" class="pl-10 pr-8 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-700 focus:outline-none focus:border-blue-500 cursor-pointer hover:bg-white min-w-[160px]">
+                            <option value="all">📚 全部科目</option>
+                            <optgroup label="主要學科">
+                                <option value="chinese">🀄 國文</option>
+                                <option value="english">🔤 英文</option>
+                                <option value="math">📐 數學</option>
+                            </optgroup>
+                            <optgroup label="社會科">
+                                <option value="history">📜 歷史</option>
+                                <option value="geography">🗺️ 地理</option>
+                                <option value="civics">⚖️ 公民</option>
+                            </optgroup>
+                            <optgroup label="自然科">
+                                <option value="nature">🧪 自然科 (總覽)</option>
+                                <option value="physics">🧲 物理 (理化)</option>
+                                <option value="chemistry">⚗️ 化學 (理化)</option>
+                                <option value="biology">🧬 生物</option>
+                                <option value="earth">🌍 地球科學</option>
+                            </optgroup>
+                        </select>
+                        <i class="fas fa-chevron-down absolute right-3 top-3.5 text-xs text-gray-400 pointer-events-none"></i>
+                    </div>
+
+                    <div class="relative">
+                        <i class="fas fa-list-ol absolute left-3 top-3 text-gray-400"></i>
+                        <select id="examCount" onchange="applyFilters()" class="pl-10 pr-8 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-700 focus:outline-none focus:border-blue-500 cursor-pointer hover:bg-white">
+                            <option value="5">5 題 (快速)</option>
+                            <option value="10" selected>10 題 (標準)</option>
+                            <option value="20">20 題 (進階)</option>
+                        </select>
+                        <i class="fas fa-chevron-down absolute right-3 top-3.5 text-xs text-gray-400 pointer-events-none"></i>
+                    </div>
+
+                    <button onclick="applyFilters()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-md shadow-blue-200 transition flex items-center gap-2 ml-auto">
+                        <i class="fas fa-filter"></i> 篩選
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex-grow overflow-y-auto p-6 md:p-8" id="mainScroll">
+            <div class="max-w-7xl mx-auto pb-20">
+                
+                <div id="loader" class="text-center py-20 hidden">
+                    <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-10 w-10 mb-4 mx-auto"></div>
+                    <p class="text-gray-400 font-bold">正在為您準備課程...</p>
+                </div>
+
+                <div id="courseContainer" class="space-y-8">
+                    </div>
+
+            </div>
+        </div>
+    </main>
+
+    <div id="profileModal" class="fixed inset-0 bg-gray-900/50 hidden z-50 flex items-center justify-center backdrop-blur-sm transition-opacity">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 w-80 transform scale-100 transition-all">
+            <h3 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">修改年級設定</h3>
+            <select id="editGrade" class="w-full p-3 border border-gray-200 rounded-xl bg-gray-50 font-bold text-gray-700 focus:border-blue-500 outline-none mb-6">
+                <optgroup label="國中階段">
+                    <option value="國七">國七</option>
+                    <option value="國八">國八</option>
+                    <option value="國九">國九</option>
+                </optgroup>
+                <optgroup label="高中階段">
+                    <option value="高一">高一</option>
+                    <option value="高二">高二</option>
+                    <option value="高三">高三</option>
+                </optgroup>
+            </select>
+            <div class="flex gap-3">
+                <button onclick="closeProfileModal()" class="flex-1 py-2 rounded-lg border border-gray-200 text-gray-500 font-bold hover:bg-gray-50">取消</button>
+                <button onclick="saveProfile()" class="flex-1 py-2 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 shadow-lg shadow-blue-200">儲存</button>
+            </div>
+        </div>
+    </div>
+
+    <input type="hidden" id="currentStage" value="high_school">
+
+    <script>
+        // ==========================================
+        //  系統邏輯
+        // ==========================================
+        
+        window.onload = function() {
+            updateUserInfo();
+            
+            document.getElementById('loader').classList.remove('hidden');
+            setTimeout(() => {
+                if(window.initCurriculumData) window.initCurriculumData();
+                autoSelectStageByGrade(); 
+                applyFilters();
+                document.getElementById('loader').classList.add('hidden');
+            }, 500);
+        };
+
+        function updateUserInfo() {
+            const user = Auth.getCurrentUser();
+            if (user) {
+                document.getElementById('sideUserName').textContent = user.name;
+                document.getElementById('topUserName').textContent = user.name;
+                document.getElementById('sideUserRole').textContent = user.grade || "未設定年級";
+                document.getElementById('editGrade').value = user.grade || "高一";
+            }
+        }
+
+        function openProfileModal() { document.getElementById('profileModal').classList.remove('hidden'); }
+        function closeProfileModal() { document.getElementById('profileModal').classList.add('hidden'); }
+        
+        function saveProfile() {
+            const newGrade = document.getElementById('editGrade').value;
+            Auth.updateUser('grade', newGrade);
+            updateUserInfo();
+            autoSelectStageByGrade();
+            applyFilters();
+            closeProfileModal();
+        }
+
+        function setStage(stage) {
+            document.getElementById('currentStage').value = stage;
+            const btnHigh = document.getElementById('btnHigh');
+            const btnJunior = document.getElementById('btnJunior');
+            
+            if (stage === 'high_school') {
+                btnHigh.className = "px-4 py-1.5 rounded-md transition shadow-sm bg-white text-gray-800 font-bold";
+                btnJunior.className = "px-4 py-1.5 rounded-md transition text-gray-500 hover:text-gray-700 font-bold";
+            } else {
+                btnHigh.className = "px-4 py-1.5 rounded-md transition text-gray-500 hover:text-gray-700 font-bold";
+                btnJunior.className = "px-4 py-1.5 rounded-md transition shadow-sm bg-white text-gray-800 font-bold";
+            }
+            applyFilters();
+        }
+
+        function autoSelectStageByGrade() {
+            const user = Auth.getCurrentUser();
+            const grade = user ? user.grade : "";
+            if (grade.includes("國") || grade.includes("七") || grade.includes("八") || grade.includes("九")) {
+                setStage('junior_high');
+            } else {
+                setStage('high_school');
+            }
+        }
+
+        // ==========================================
+        //  核心：課程篩選與渲染
+        // ==========================================
+        function applyFilters() {
+            const stage = document.getElementById('currentStage').value;
+            const subject = document.getElementById('filterSubject').value;
+            const container = document.getElementById('courseContainer');
+            
+            const allData = window.Curriculum108 || [];
+            
+            // 篩選邏輯
+            let filtered = allData.filter(g => {
+                const matchStage = (g.stage === stage);
+                let dataSub = g.subject;
+                if (dataSub === 'earth_science') dataSub = 'earth';
+
+                let matchSub = false;
+                if (subject === 'all') {
+                    matchSub = true;
+                } else if (subject === 'nature') {
+                    // 自然科群組 (物理/化學/生物/地科)
+                    matchSub = ['physics', 'chemistry', 'biology', 'earth'].includes(dataSub);
+                } else {
+                    // 單一科目 (含 歷史/地理/公民)
+                    matchSub = (dataSub === subject);
+                }
+
+                return matchStage && matchSub;
+            });
+
+            container.innerHTML = '';
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-20 opacity-60">
+                        <div class="w-20 h-20 bg-gray-200 rounded-full mx-auto flex items-center justify-center text-3xl text-gray-400 mb-4">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <p class="font-bold text-gray-500">沒有找到相關課程</p>
+                        <p class="text-sm text-gray-400">請嘗試切換其他科目或學制</p>
+                    </div>`;
+                return;
+            }
+
+            // 分組 (依冊別 Book 1~6)
+            const bookMap = {};
+            filtered.forEach(g => {
+                let bookName = g.book;
+                const gradeName = getGradeName(stage, bookName);
+                const displayName = `${bookName} ${gradeName}`;
+                
+                if (!bookMap[displayName]) bookMap[displayName] = [];
+                bookMap[displayName].push(g);
+            });
+
+            // 排序 (Book 1 -> Book 6)
+            const sortedKeys = Object.keys(bookMap).sort((a, b) => {
+                const getNum = s => {
+                    const m = s.match(/Book (\d+)/);
+                    return m ? parseInt(m[1]) : 99;
+                };
+                return getNum(a) - getNum(b);
+            });
+
+            sortedKeys.forEach((bookTitle) => {
+                container.innerHTML += createSection(bookTitle, bookMap[bookTitle]);
+            });
+        }
+
+        function getGradeName(stage, bookStr) {
+            const match = bookStr.match(/Book (\d+)/);
+            if (!match) return "";
+            const num = parseInt(match[1]);
+            const sem = num % 2 !== 0 ? "上" : "下";
+            
+            if (stage === 'high_school') {
+                const g = num <= 2 ? "高一" : num <= 4 ? "高二" : "高三";
+                return `(${g}${sem})`;
+            } else {
+                const g = num <= 2 ? "七年級" : num <= 4 ? "八年級" : "九年級";
+                return `(${g}${sem})`;
+            }
+        }
+
+        function createSection(title, groups) {
+            let cardsHTML = '';
+            // 排序科目
+            const subOrder = ['chinese', 'english', 'math', 'physics', 'chemistry', 'biology', 'earth', 'history', 'geography', 'civics'];
+            
+            groups.sort((a,b) => {
+                let ia = subOrder.indexOf(a.subject) === -1 ? 99 : subOrder.indexOf(a.subject);
+                let ib = subOrder.indexOf(b.subject) === -1 ? 99 : subOrder.indexOf(b.subject);
+                return ia - ib;
+            });
+
+            groups.forEach(group => {
+                if(group.courses) {
+                    group.courses.forEach(course => {
+                        cardsHTML += createCard(group, course);
+                    });
+                }
+            });
+
+            return `
+            <div>
+                <div class="flex items-center gap-3 mb-4 pl-1">
+                    <span class="w-1.5 h-6 bg-blue-600 rounded-full"></span>
+                    <h2 class="text-xl font-bold text-gray-800">${title}</h2>
+                    <span class="text-xs font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">${groups.length} 課程</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                    ${cardsHTML}
+                </div>
+            </div>`;
+        }
+
+        function createCard(group, course) {
+            const config = {
+                math: { c: "blue", i: "fa-calculator", t: "數學" },
+                english: { c: "emerald", i: "fa-language", t: "英文" },
+                chinese: { c: "red", i: "fa-feather-alt", t: "國文" },
+                physics: { c: "purple", i: "fa-atom", t: "物理" },
+                chemistry: { c: "pink", i: "fa-flask", t: "化學" },
+                biology: { c: "green", i: "fa-leaf", t: "生物" },
+                history: { c: "amber", i: "fa-landmark", t: "歷史" },
+                geography: { c: "cyan", i: "fa-globe-americas", t: "地理" },
+                civics: { c: "indigo", i: "fa-balance-scale", t: "公民" },
+                earth: { c: "sky", i: "fa-meteor", t: "地科" }
+            };
+
+            let subjKey = group.subject === 'earth_science' ? 'earth' : group.subject;
+            const conf = config[subjKey] || { c: "gray", i: "fa-book", t: group.subject };
+            
+            const count = document.getElementById('examCount').value;
+            const linkHref = `exam.html?id=${course.id}&subject=${group.subject}&count=${count}`;
+            
+            // 處理 Tags 顯示 (取前2個)
+            const tags = (course.tags || []).slice(0, 2).map(t => `<span class="text-[10px] bg-gray-50 text-gray-500 border px-1.5 py-0.5 rounded">#${t}</span>`).join('');
+
+            return `
+            <a href="${linkHref}" class="course-card bg-white rounded-xl p-5 flex flex-col h-full relative overflow-hidden group">
+                <div class="absolute top-0 right-0 w-16 h-16 bg-${conf.c}-50 rounded-bl-full -mr-8 -mt-8 z-0 group-hover:bg-${conf.c}-100 transition"></div>
+                
+                <div class="flex justify-between items-start mb-3 z-10">
+                    <div class="w-10 h-10 rounded-lg bg-${conf.c}-50 text-${conf.c}-600 flex items-center justify-center text-lg shadow-sm border border-${conf.c}-100 group-hover:scale-110 transition">
+                        <i class="fas ${conf.i}"></i>
+                    </div>
+                    <span class="text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded border">${group.subjectName || conf.t}</span>
+                </div>
+                
+                <div class="z-10 flex-grow">
+                    <h3 class="font-bold text-gray-800 text-md leading-tight mb-2 group-hover:text-${conf.c}-600 transition line-clamp-2 min-h-[2.5rem]">
+                        ${course.name}
+                    </h3>
+                    <div class="flex flex-wrap gap-1 mb-4 h-6 overflow-hidden">${tags}</div>
+                </div>
+
+                <div class="mt-auto z-10 pt-4 border-t border-gray-50">
+                    <div class="w-full bg-${conf.c}-50 text-${conf.c}-700 py-2 rounded-lg font-bold text-sm text-center group-hover:bg-${conf.c}-600 group-hover:text-white transition flex items-center justify-center gap-2">
+                        <span>開始測驗</span> <i class="fas fa-arrow-right text-xs"></i>
+                    </div>
+                </div>
+            </a>`;
+        }
+    </script>
+</body>
+</html>

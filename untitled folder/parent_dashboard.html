@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>家長專區 - 翰林雲端學院</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>body { font-family: 'Noto Sans TC', sans-serif; background-color: #f4f6f8; }</style>
+    
+    <script src="mockdata/users.js"></script>
+    <script src="assets/js/auth.js"></script>
+    <script>const currentUser = Auth.requireRole('parent');</script>
+</head>
+<body class="h-screen flex overflow-hidden">
+
+    <aside class="w-64 bg-white border-r border-gray-200 hidden lg:flex flex-col z-20 shadow-sm">
+        <div class="h-16 flex items-center px-6 border-b border-gray-100">
+            <div class="w-8 h-8 bg-green-600 rounded text-white flex items-center justify-center font-bold text-lg mr-3 shadow-sm">家</div>
+            <span class="text-xl font-bold text-gray-800">雲端學院</span>
+        </div>
+
+        <div class="p-6">
+            <div class="bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-xl border border-green-100 text-center">
+                <div class="w-14 h-14 mx-auto bg-white rounded-full flex items-center justify-center text-xl text-green-600 mb-3 shadow-sm">
+                    <i class="fas fa-user-friends"></i>
+                </div>
+                <h3 class="font-bold text-gray-800" id="pName">--</h3>
+                <div class="text-xs text-gray-500">家長帳號</div>
+            </div>
+        </div>
+
+        <nav class="flex-grow px-4 space-y-1">
+            <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-lg bg-green-50 text-green-700 font-bold border-l-4 border-green-600">
+                <i class="fas fa-child w-5"></i> 子女概況
+            </a>
+            <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-50 transition">
+                <i class="fas fa-file-invoice w-5"></i> 成績週報
+            </a>
+            <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-50 transition">
+                <i class="fas fa-bullseye w-5"></i> 弱點分析
+            </a>
+        </nav>
+
+        <div class="p-4 border-t border-gray-200">
+            <button onclick="Auth.logout()" class="w-full flex items-center justify-center gap-2 text-gray-500 hover:text-red-500 py-2 transition text-sm font-bold">
+                <i class="fas fa-sign-out-alt"></i> 登出
+            </button>
+        </div>
+    </aside>
+
+    <main class="flex-grow flex flex-col h-full relative">
+        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 z-10">
+            <h2 class="text-lg font-bold text-gray-800">子女學習儀表板</h2>
+            <div class="flex items-center gap-2">
+                <span class="text-sm text-gray-500">綁定子女：</span>
+                <span class="font-bold text-gray-800 bg-gray-100 px-3 py-1 rounded-full text-sm">陳小明</span>
+            </div>
+        </header>
+
+        <div class="flex-grow overflow-y-auto p-6 md:p-8">
+            <div class="max-w-5xl mx-auto space-y-6">
+                
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex flex-col md:flex-row justify-between items-center gap-6">
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center text-3xl">👦</div>
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-800">陳小明 <span class="text-sm font-normal text-gray-500 ml-2">高一</span></h3>
+                            <p class="text-sm text-green-600 font-bold mt-1"><i class="fas fa-check-circle"></i> 今日已完成 2 項測驗</p>
+                        </div>
+                    </div>
+                    <button class="bg-yellow-400 hover:bg-yellow-500 text-yellow-900 px-6 py-2 rounded-xl font-bold shadow-md transition transform active:scale-95 flex items-center gap-2">
+                        <i class="fas fa-thumbs-up"></i> 發送鼓勵
+                    </button>
+                </div>
+
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                    <h3 class="font-bold text-gray-800 mb-6 flex items-center gap-2">
+                        <i class="fas fa-chart-line text-blue-500"></i> 近期成績趨勢
+                    </h3>
+                    <div class="h-64">
+                        <canvas id="scoreTrendChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                        <h3 class="font-bold text-gray-800 mb-4">學科強弱項分析</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span class="font-bold text-gray-600">英文</span>
+                                    <span class="font-bold text-green-600">85 分</span>
+                                </div>
+                                <div class="w-full bg-gray-100 rounded-full h-2.5">
+                                    <div class="bg-green-500 h-2.5 rounded-full" style="width: 85%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span class="font-bold text-gray-600">數學</span>
+                                    <span class="font-bold text-orange-500">62 分</span>
+                                </div>
+                                <div class="w-full bg-gray-100 rounded-full h-2.5">
+                                    <div class="bg-orange-500 h-2.5 rounded-full" style="width: 62%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                        <h3 class="font-bold text-gray-800 mb-4">最新測驗紀錄</h3>
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                <div>
+                                    <div class="font-bold text-sm text-gray-800">英文第三冊第一課</div>
+                                    <div class="text-xs text-gray-500">昨天 19:30</div>
+                                </div>
+                                <span class="font-bold text-green-600">90 分</span>
+                            </div>
+                            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                <div>
+                                    <div class="font-bold text-sm text-gray-800">數學多項式</div>
+                                    <div class="text-xs text-gray-500">前天 20:15</div>
+                                </div>
+                                <span class="font-bold text-red-500">55 分</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <script>
+        document.getElementById('pName').textContent = currentUser.name;
+
+        new Chart(document.getElementById('scoreTrendChart'), {
+            type: 'line',
+            data: {
+                labels: ['週一', '週二', '週三', '週四', '週五', '週六', '週日'],
+                datasets: [{
+                    label: '平均測驗分數',
+                    data: [65, 68, 75, 72, 80, 85, 82],
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: { maintainAspectRatio: false, scales: { y: { min: 0, max: 100 } } }
+        });
+    </script>
+</body>
+</html>

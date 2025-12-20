@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>錯題補救庫 - 翰林雲端學院</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="mockdata/users.js"></script>
+    <script src="assets/js/auth.js"></script>
+    <style>body { font-family: 'Noto Sans TC', sans-serif; background-color: #f4f6f8; }</style>
+</head>
+<body class="h-screen flex overflow-hidden">
+
+    <aside class="w-64 bg-white border-r border-gray-200 hidden lg:flex flex-col z-20 shadow-sm">
+        <div class="h-16 flex items-center px-6 border-b border-gray-100">
+            <div class="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded text-white flex items-center justify-center font-bold text-lg mr-3">翰</div>
+            <span class="text-xl font-bold text-gray-800">雲端學院</span>
+        </div>
+        <nav class="flex-grow px-4 space-y-1 mt-6">
+            <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-50 transition"><i class="fas fa-th-large w-5"></i> 課程總覽</a>
+            <a href="analysis.html" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-50 transition"><i class="fas fa-chart-pie w-5"></i> 學習分析</a>
+            <a href="remedial.html" class="flex items-center gap-3 px-4 py-3 rounded-lg bg-blue-50 text-blue-700 font-bold border-l-4 border-blue-600"><i class="fas fa-book-medical w-5"></i> 錯題補救</a>
+            <a href="forum.html" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-50 transition"><i class="fas fa-comments w-5"></i> 解題論壇</a>
+        </nav>
+    </aside>
+
+    <main class="flex-grow flex flex-col h-full">
+        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 z-10">
+            <h2 class="text-lg font-bold text-gray-800">錯題補救庫</h2>
+            <div class="bg-red-50 text-red-600 px-3 py-1 rounded-full text-xs font-bold">
+                累積錯題：<span id="totalWrong">0</span>
+            </div>
+        </header>
+
+        <div class="flex-grow overflow-y-auto p-6 md:p-8">
+            <div class="max-w-4xl mx-auto space-y-6" id="wrongContainer">
+                </div>
+        </div>
+    </main>
+
+    <script>
+        const currentUser = Auth.requireLogin();
+        const storageKey = `history_${currentUser.username}`;
+        const history = JSON.parse(localStorage.getItem(storageKey) || "[]");
+        let allWrong = [];
+        history.forEach(exam => {
+            if (exam.wrongList) {
+                exam.wrongList.forEach(q => allWrong.push({...q, date: exam.date}));
+            }
+        });
+
+        document.getElementById('totalWrong').textContent = allWrong.length;
+        const container = document.getElementById('wrongContainer');
+
+        if (allWrong.length === 0) {
+            container.innerHTML = `<div class="text-center py-20 text-gray-400 font-bold">目前沒有錯題紀錄</div>`;
+        } else {
+            allWrong.reverse().forEach((q, i) => {
+                const explain = q.explanation ? q.explanation.join('') : "無解析";
+                container.innerHTML += `
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 hover:shadow-md transition group">
+                        <div class="flex justify-between text-xs text-gray-400 mb-3 font-bold uppercase tracking-wider">
+                            <span>${q.concept || '綜合'}</span>
+                            <span>${q.date.split(' ')[0]}</span>
+                        </div>
+                        <h3 class="font-bold text-gray-800 text-lg mb-4">${q.question}</h3>
+                        
+                        <div class="flex flex-col gap-2 mb-4">
+                            <div class="flex items-center text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg border border-red-100">
+                                <span class="font-bold w-20">您的誤答</span>
+                                <span>${q.options[q.yourAns]}</span>
+                            </div>
+                            <div class="flex items-center text-sm text-green-600 bg-green-50 px-3 py-2 rounded-lg border border-green-100">
+                                <span class="font-bold w-20">正確解答</span>
+                                <span>${q.options[q.answer]}</span>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-gray-100 pt-3">
+                            <button onclick="this.nextElementSibling.classList.toggle('hidden')" class="text-blue-600 text-sm font-bold hover:underline flex items-center gap-1">
+                                <i class="fas fa-eye"></i> 查看詳細解析
+                            </button>
+                            <div class="hidden mt-3 text-sm text-gray-600 bg-gray-50 p-4 rounded-lg leading-relaxed">
+                                ${explain}
+                            </div>
+                        </div>
+                    </div>`;
+            });
+        }
+    </script>
+</body>
+</html>

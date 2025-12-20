@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>翰林雲端學院 - 智慧學習平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <script src="mockdata/users.js"></script>
+    <script src="assets/js/auth.js"></script>
+
+    <style>
+        .blob { position: absolute; filter: blur(40px); z-index: -1; opacity: 0.5; }
+        .blob-1 { top: -10%; left: -10%; width: 500px; height: 500px; background: #bfdbfe; border-radius: 50%; animation: float 6s infinite ease-in-out; }
+        .blob-2 { bottom: -10%; right: -10%; width: 400px; height: 400px; background: #e9d5ff; border-radius: 50%; animation: float 8s infinite ease-in-out reverse; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(20px); } }
+        
+        /* 平滑捲動 */
+        html { scroll-behavior: smooth; }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans text-gray-800 relative overflow-x-hidden">
+
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+
+    <nav class="w-full px-6 py-4 flex justify-between items-center z-50 fixed top-0 bg-white/80 backdrop-blur-md shadow-sm">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl text-white flex items-center justify-center font-bold text-xl shadow-lg">翰</div>
+            <span class="text-2xl font-bold text-gray-800 tracking-wide">雲端學院</span>
+        </div>
+        <div class="hidden md:flex gap-8 text-gray-600 font-medium">
+            <a href="#features" class="hover:text-blue-600 transition">平台特色</a>
+            <a href="#stats" class="hover:text-blue-600 transition">學習成效</a>
+            <a href="#pricing" class="hover:text-blue-600 transition">方案費用</a>
+            <a href="#faq" class="hover:text-blue-600 transition">常見問題</a>
+        </div>
+        <div>
+            <a href="register.html" class="bg-blue-600 text-white px-5 py-2 rounded-full font-bold hover:bg-blue-700 transition shadow-md">
+                免費註冊
+            </a>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-6 pt-32 pb-12 md:pb-20 flex flex-col md:flex-row items-center justify-between gap-12 relative z-10">
+        
+        <div class="md:w-1/2 space-y-6">
+            <div class="inline-block bg-blue-100 text-blue-700 px-4 py-1 rounded-full text-sm font-bold tracking-wide mb-2 animate-pulse">
+                🚀 2025 全新升級：導入 AI 題庫生成
+            </div>
+            <h1 class="text-4xl md:text-6xl font-extrabold text-gray-900 leading-tight">
+                學習，<br>
+                從未如此 <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">精準高效</span>
+            </h1>
+            <p class="text-lg text-gray-500 leading-relaxed">
+                結合大數據分析與智慧出題系統。為學生提供個人化補救，為老師提供精準診斷。
+                <br>現在加入，立即體驗全科無限題庫。
+            </p>
+            <div class="flex gap-4 pt-4">
+                <a href="#pricing" class="px-8 py-3 bg-gray-800 text-white rounded-lg font-bold hover:bg-gray-900 transition shadow-lg">
+                    查看方案
+                </a>
+                <a href="#features" class="px-8 py-3 bg-white text-gray-700 border border-gray-200 rounded-lg font-bold hover:bg-gray-50 transition">
+                    了解更多
+                </a>
+            </div>
+            <div class="pt-6 flex items-center gap-6 text-sm text-gray-400">
+                <span><i class="fas fa-check text-blue-500 mr-1"></i> 免費試用</span>
+                <span><i class="fas fa-check text-blue-500 mr-1"></i> 無須綁定信用卡</span>
+                <span><i class="fas fa-check text-blue-500 mr-1"></i> 支援所有裝置</span>
+            </div>
+        </div>
+
+        <div class="md:w-5/12 w-full">
+            <div class="bg-white p-8 rounded-2xl shadow-2xl border border-gray-100 relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-500 to-purple-600"></div>
+                
+                <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">會員登入</h2>
+
+                <form id="loginForm" class="space-y-5">
+                    <div>
+                        <label class="block text-gray-700 text-xs font-bold mb-2 uppercase">帳號</label>
+                        <div class="relative">
+                            <i class="fas fa-user absolute left-3 top-3.5 text-gray-400"></i>
+                            <input type="text" id="username" class="w-full pl-10 p-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:bg-white transition" placeholder="輸入帳號" value="student">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 text-xs font-bold mb-2 uppercase">密碼</label>
+                        <div class="relative">
+                            <i class="fas fa-lock absolute left-3 top-3.5 text-gray-400"></i>
+                            <input type="password" id="password" class="w-full pl-10 p-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:bg-white transition" placeholder="輸入密碼" value="123">
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white p-3.5 rounded-lg font-bold hover:shadow-lg hover:from-blue-700 hover:to-blue-800 transition transform active:scale-95 flex justify-center items-center gap-2">
+                        <span>立即登入</span> <i class="fas fa-arrow-right"></i>
+                    </button>
+                </form>
+
+                <div class="mt-6 pt-6 border-t border-gray-100 text-center">
+                    <a href="register.html" class="inline-block text-blue-600 font-bold hover:underline">
+                        還沒有帳號？立即註冊
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <section id="stats" class="py-12 bg-white border-y border-gray-100">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+                <div>
+                    <div class="text-4xl font-extrabold text-blue-600 mb-2">50,000+</div>
+                    <div class="text-gray-500 text-sm font-bold">註冊學生</div>
+                </div>
+                <div>
+                    <div class="text-4xl font-extrabold text-purple-600 mb-2">1.2 億</div>
+                    <div class="text-gray-500 text-sm font-bold">累計生成題數</div>
+                </div>
+                <div>
+                    <div class="text-4xl font-extrabold text-green-600 mb-2">98%</div>
+                    <div class="text-gray-500 text-sm font-bold">用戶滿意度</div>
+                </div>
+                <div>
+                    <div class="text-4xl font-extrabold text-orange-500 mb-2">全台</div>
+                    <div class="text-gray-500 text-sm font-bold">國高中學校採用</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="features" class="py-20 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl font-bold text-gray-800">三大核心技術</h2>
+                <p class="text-gray-500 mt-4">透過科技輔助，讓學習更有效率</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="p-8 bg-white rounded-2xl shadow-sm hover:shadow-xl transition duration-300 group">
+                    <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center text-3xl mb-6 group-hover:scale-110 transition">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-3">AI 智慧出題</h3>
+                    <p class="text-gray-600 leading-relaxed">運用演算法動態生成題目，數值與情境每次都不同，徹底解決死背答案的問題。</p>
+                </div>
+                <div class="p-8 bg-white rounded-2xl shadow-sm hover:shadow-xl transition duration-300 group">
+                    <div class="w-16 h-16 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center text-3xl mb-6 group-hover:scale-110 transition">
+                        <i class="fas fa-chart-radar"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-3">精準弱點診斷</h3>
+                    <p class="text-gray-600 leading-relaxed">透過雷達圖分析五大能力指標，精準抓出學習盲點，並提供個人化補救建議。</p>
+                </div>
+                <div class="p-8 bg-white rounded-2xl shadow-sm hover:shadow-xl transition duration-300 group">
+                    <div class="w-16 h-16 bg-green-100 text-green-600 rounded-2xl flex items-center justify-center text-3xl mb-6 group-hover:scale-110 transition">
+                        <i class="fas fa-user-friends"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-3">親師生連動</h3>
+                    <p class="text-gray-600 leading-relaxed">數據即時同步，家長可透過手機掌握孩子狀況，教師可一鍵派發作業。</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="pricing" class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl font-bold text-gray-800">選擇適合您的方案</h2>
+                <p class="text-gray-500 mt-4">我們致力於教育普及，基礎功能永久免費</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+                
+                <div class="border-2 border-blue-500 rounded-2xl p-8 relative transform scale-105 shadow-2xl bg-white z-10">
+                    <div class="absolute top-0 right-0 bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg">
+                        最受歡迎
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800">學生基礎版</h3>
+                    <div class="my-4">
+                        <span class="text-5xl font-extrabold text-blue-600">NT$ 0</span>
+                        <span class="text-gray-400">/ 永久免費</span>
+                    </div>
+                    <p class="text-gray-500 mb-6 text-sm">適合全台國高中生自主學習使用。</p>
+                    <ul class="space-y-4 mb-8">
+                        <li class="flex items-center text-gray-700"><i class="fas fa-check text-green-500 mr-3"></i> 無限次 AI 出題</li>
+                        <li class="flex items-center text-gray-700"><i class="fas fa-check text-green-500 mr-3"></i> 基礎診斷報告</li>
+                        <li class="flex items-center text-gray-700"><i class="fas fa-check text-green-500 mr-3"></i> 錯題紀錄庫</li>
+                        <li class="flex items-center text-gray-700"><i class="fas fa-check text-green-500 mr-3"></i> 親師生平台連動</li>
+                    </ul>
+                    <a href="register.html" class="block w-full py-3 bg-blue-600 text-white text-center rounded-xl font-bold hover:bg-blue-700 transition">
+                        立即免費註冊
+                    </a>
+                </div>
+
+                <div class="border border-gray-200 rounded-2xl p-8 bg-gray-50 hover:border-purple-300 transition">
+                    <h3 class="text-xl font-bold text-purple-700">教師進階版</h3>
+                    <div class="my-4">
+                        <span class="text-4xl font-bold text-gray-800">免費申請</span>
+                    </div>
+                    <p class="text-gray-500 mb-6 text-sm">僅限學校教師憑證申請使用。</p>
+                    <ul class="space-y-4 mb-8 text-sm">
+                        <li class="flex items-center text-gray-600"><i class="fas fa-check text-purple-500 mr-3"></i> 班級管理系統</li>
+                        <li class="flex items-center text-gray-600"><i class="fas fa-check text-purple-500 mr-3"></i> 一鍵派發作業</li>
+                        <li class="flex items-center text-gray-600"><i class="fas fa-check text-purple-500 mr-3"></i> 全班學情分析</li>
+                    </ul>
+                    <button onclick="alert('請聯繫校務系統管理員開通權限')" class="block w-full py-3 border border-purple-600 text-purple-600 text-center rounded-xl font-bold hover:bg-purple-50 transition">
+                        教師申請
+                    </button>
+                </div>
+
+                <div class="border border-gray-200 rounded-2xl p-8 bg-gray-50 hover:border-gray-400 transition">
+                    <h3 class="text-xl font-bold text-gray-700">校園授權版</h3>
+                    <div class="my-4">
+                        <span class="text-4xl font-bold text-gray-800">客製化</span>
+                    </div>
+                    <p class="text-gray-500 mb-6 text-sm">適合補習班或學校機構導入。</p>
+                    <ul class="space-y-4 mb-8 text-sm">
+                        <li class="flex items-center text-gray-600"><i class="fas fa-check text-gray-500 mr-3"></i> 校務系統整合</li>
+                        <li class="flex items-center text-gray-600"><i class="fas fa-check text-gray-500 mr-3"></i> 專屬題庫上傳</li>
+                        <li class="flex items-center text-gray-600"><i class="fas fa-check text-gray-500 mr-3"></i> API 串接服務</li>
+                    </ul>
+                    <button onclick="alert('將轉接業務專員')" class="block w-full py-3 border border-gray-400 text-gray-600 text-center rounded-xl font-bold hover:bg-gray-100 transition">
+                        聯絡我們
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <section id="faq" class="py-16 bg-gray-50">
+        <div class="max-w-4xl mx-auto px-6">
+            <h2 class="text-3xl font-bold text-center text-gray-800 mb-12">常見問題</h2>
+            <div class="space-y-4">
+                <div class="bg-white p-6 rounded-xl shadow-sm">
+                    <h3 class="font-bold text-lg text-gray-800 mb-2">Q: 學生版真的是免費的嗎？</h3>
+                    <p class="text-gray-600">是的，為了推廣數位學習，我們提供全國國高中生永久免費使用基礎功能，包含無限題庫練習。</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm">
+                    <h3 class="font-bold text-lg text-gray-800 mb-2">Q: 題庫內容符合 108 課綱嗎？</h3>
+                    <p class="text-gray-600">完全符合。我們的題庫由專業教師團隊依據教育部最新 108 課綱編寫，並涵蓋各版本教材。</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm">
+                    <h3 class="font-bold text-lg text-gray-800 mb-2">Q: 家長如何查看孩子成績？</h3>
+                    <p class="text-gray-600">家長註冊帳號後，可輸入孩子的帳號進行綁定，即可在手機上即時查看學習週報與雷達圖分析。</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="bg-gray-900 text-gray-400 py-12">
+        <div class="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
+            <div>
+                <h4 class="text-white font-bold mb-4">產品服務</h4>
+                <ul class="space-y-2 text-sm">
+                    <li><a href="page.html?id=features" class="hover:text-white transition">功能介紹</a></li>
+                    <li><a href="page.html?id=changelog" class="hover:text-white transition">更新日誌</a></li>
+                    <li><a href="page.html?id=api_docs" class="hover:text-white transition">API 文件</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="text-white font-bold mb-4">學習資源</h4>
+                <ul class="space-y-2 text-sm">
+                    <li><a href="page.html?id=past_exams" class="hover:text-white transition">歷屆試題</a></li>
+                    <li><a href="page.html?id=methods" class="hover:text-white transition">學習方法論</a></li>
+                    <li><a href="page.html?id=admission" class="hover:text-white transition">升學資訊</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="text-white font-bold mb-4">關於我們</h4>
+                <ul class="space-y-2 text-sm">
+                    <li><a href="page.html?id=about" class="hover:text-white transition">公司簡介</a></li>
+                    <li><a href="page.html?id=careers" class="hover:text-white transition">加入我們</a></li>
+                    <li><a href="page.html?id=contact" class="hover:text-white transition">聯絡客服</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="text-white font-bold mb-4">法律條款</h4>
+                <ul class="space-y-2 text-sm">
+                    <li><a href="page.html?id=terms" class="hover:text-white transition">服務條款</a></li>
+                    <li><a href="page.html?id=privacy" class="hover:text-white transition">隱私權政策</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="border-t border-gray-800 pt-8 text-center text-sm">
+            <p>&copy; 2025 翰林雲端學院. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // 自動導向檢查
+        const currentUser = Auth.getCurrentUser();
+        if (currentUser) {
+            redirectUser(currentUser.role);
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const u = document.getElementById('username').value;
+            const p = document.getElementById('password').value;
+
+            // 呼叫 Auth.js
+            const result = Auth.login(u, p);
+
+            if (result.success) {
+                const btn = this.querySelector('button');
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> 登入中...';
+                
+                setTimeout(() => {
+                    redirectUser(result.role);
+                }, 600);
+            } else {
+                alert(result.message);
+                const card = document.querySelector('.bg-white');
+                card.classList.add('animate-pulse');
+                setTimeout(() => card.classList.remove('animate-pulse'), 500);
+            }
+        });
+
+        function redirectUser(role) {
+            if (role === 'student') window.location.href = 'dashboard.html';
+            else if (role === 'teacher') window.location.href = 'teacher_dashboard.html';
+            else if (role === 'parent') window.location.href = 'parent_dashboard.html';
+            else window.location.href = 'dashboard.html';
+        }
+    </script>
+</body>
+</html>
