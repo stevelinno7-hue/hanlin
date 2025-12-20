@@ -26,7 +26,7 @@ const RealAITutor = {
     // 呼叫 Gemini API (不再需要 userApiKey 參數)
     askGemini: async function(userTitle, userContent) {
         // 檢查是否已設定 Key
-        if (!this.apiKey || this.apiKey.includes("AIzaSyC1CM-CUyrV7RV0brrEMgs2zI0ESe3LJJo")) {
+        if (!this.apiKey || this.apiKey.includes("AIzaSyCkfweojt2TiajuCN4MoP6Ms9RhQYbeMds")) {
             return "【系統提示】管理者尚未設定 API Key，請通知管理員至程式碼中填入金鑰。";
         }
 
