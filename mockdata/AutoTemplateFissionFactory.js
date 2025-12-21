@@ -91,6 +91,10 @@
         console.log(
             `✅ 自動裂變工廠已啟動：${CONTEXT_WRAPPERS.length} 種情境可用`
         );
+        // 🔔 通知 Bootstrap：裂變工廠已就緒
+        window.AUTO_FISSION_READY = true;
+        window.dispatchEvent(new Event("AutoTemplateFissionReady"));
+
     }
 
     initFactory();
