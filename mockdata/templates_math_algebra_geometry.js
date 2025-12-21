@@ -1,21 +1,12 @@
-(function (global) {
-  'use strict';
+(function(global){
+    'use strict';
+    function init() {
+        const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
+        if (!G || !G.registerTemplate) { setTimeout(init, 100); return; }
+        const { randInt, shuffle, generateNumericOptions } = G.utils;
 
-  function init() {
-    // ===== 1. 等待引擎 =====
-    const G = global.RigorousGenerator;
-    if (!G || !G.registerTemplate || !G.utils) {
-      setTimeout(init, 100);
-      return;
-    }
-
-    const { randInt, shuffle, generateNumericOptions } = G.utils;
-
-    // =================================================
-    // 2. 題庫（⚠ 完全使用你的原始資料，未修改）
-    // =================================================
-    const mathDB = [
-    // ==========================================
+        const mathDB = [
+            // ==========================================
       // [國七] 數與式、一元一次 (Grade 7)
       // ==========================================
       { t: "整數運算", q: (a,b)=>`若甲數 = ${a}，乙數 = ${-b}，試求 甲 - 2 × 乙 之值為何？`, a: (a,b)=>a - 2*(-b), tag:["國七","整數"] },
@@ -82,92 +73,24 @@
       { t: "條件機率", q: (a,b)=>`P(A|B) 的定義為何？`, type:'text', opts:['P(A∩B)/P(B)','P(A∩B)/P(A)','P(A)/P(B)','P(A)P(B)'], a:()=>0, tag:['高三','機率'] }
     ];
 
-    // =================================================
-    // 3. 安全註冊（核心修正區，只改這裡）
-    // =================================================
-    mathDB.forEach((p, idx) => {
-      const templateId = `math_${p.tag[0]}_${p.tag[1]}_${idx}`;
-
-      G.registerTemplate(
-        templateId,
-        () => {
-          const v1 = randInt(2, 9);
-          const v2 = randInt(2, 9);
-
-          let options = [];
-          let answerIndex = 0;
-
-          const rawAns = p.a ? p.a(v1, v2) : null;
-
-          // ---------- 文字選擇題 ----------
-          if (p.type === 'text') {
-            const baseOpts =
-              typeof p.opts === 'function' ? p.opts(v1, v2) : p.opts;
-
-            let correct;
-
-            // a() 回傳 index
-            if (typeof rawAns === 'number') {
-              correct = baseOpts[rawAns];
-            }
-            // a() 回傳字串
-            else {
-              correct = rawAns;
-            }
-
-            options = shuffle([...baseOpts]);
-            answerIndex = options.indexOf(correct);
-          }
-
-          // ---------- 分數顯示題 ----------
-          else if (p.type === 'fraction') {
-            const baseOpts =
-              typeof p.opts === 'function' ? p.opts(v1) : p.opts;
-
-            const correct = baseOpts[0]; // 約定第一個是正解
-
-            options = shuffle([...baseOpts]);
-            answerIndex = options.indexOf(correct);
-          }
-
-          // ---------- 一般數值計算 ----------
-          else {
-            const ans = Number.isInteger(rawAns)
-              ? rawAns
-              : Number(rawAns.toFixed(2));
-
-            options = shuffle(
-              generateNumericOptions(
-                ans,
-                Number.isInteger(ans) ? 'int' : 'float'
-              )
-            );
-
-            answerIndex = options.indexOf(ans);
-          }
-
-          // ---------- 保底（理論上不會觸發） ----------
-          if (answerIndex < 0) {
-            answerIndex = 0;
-          }
-
-          return {
-            question: `【${p.tag[0]}】${p.q(v1, v2)}`,
-            options,
-            answer: answerIndex,
-            concept: p.t,
-            explanation: [
-              `單元：${p.tag[1]}`,
-              `正確答案：${options[answerIndex]}`
-            ]
-          };
-        },
-        ["數學", ...p.tag]
-      );
-    });
-
-    console.log('✅ 數學題庫已完整載入（安全版）');
-  }
-
-  init();
-})(this);
+        mathDB.forEach((p, i) => {
+            G.registerTemplate(`math_q${i}`, (ctx, rnd) => {
+                const v1 = randInt(2, 9), v2 = randInt(2, 9);
+                let ans = p.a(v1, v2), opts;
+                if (p.type === 'text') {
+                    const op = typeof p.opts==='function'?p.opts(v1,v2):p.opts;
+                    opts = shuffle(op); ans = op[0]; 
+                } else {
+                    opts = shuffle(generateNumericOptions(ans, Number.isInteger(ans)?'int':'float'));
+                }
+                return {
+                    question: `【數學】${p.q(v1, v2)}`,
+                    options: opts, answer: opts.indexOf(ans), concept: p.t,
+                    explanation: [`正確答案：${ans}`]
+                };
+            }, ["math", "數學", ...p.tag]);
+        });
+        console.log("✅ 數學題庫已載入");
+    }
+    init();
+})(window);
