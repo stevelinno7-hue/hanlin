@@ -1,17 +1,7 @@
 (function(global){
     'use strict';
-
-    // 定義一個啟動函式
-    function init() {
-        const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
-        
-        // 檢查：如果引擎還沒好，就等 100 毫秒後再試一次
-        if (!G || !G.registerTemplate) {
-            setTimeout(init, 100);
-            return;
-        }
-
-        const { pick, shuffle } = G.utils;
+    if (!global.RigorousGenerator) return;
+    const { pick, shuffle } = global.RigorousGenerator.utils;
 
     // ============================================================
     // 7000單字精華資料庫 (涵蓋 Level 1-6 各級距高頻字彙)
