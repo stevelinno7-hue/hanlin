@@ -2,27 +2,36 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>解題論壇 (AI版) - 翰林雲端學院</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>解題論壇 (AI版) - 翰點雲端學院</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
     
     <style>
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f4f6f8; }
-        .sidebar-glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f8fafc; color: #334155; }
         
+        /* 側邊欄統一配色 */
+        .nav-item-active { 
+            background-color: #eff6ff !important; /* bg-blue-50 */
+            color: #2563eb !important;            /* text-blue-600 */
+            font-weight: 700;
+        }
+        .nav-item-inactive { color: #64748b; }
+        .nav-item-inactive:hover { background-color: #f8fafc; color: #1e293b; }
+
         /* AI 回覆卡片樣式 */
         .ai-reply-card {
             background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-            border-left: 4px solid #0ea5e9;
+            border-left: 4px solid #3b82f6;
         }
         
-        /* Markdown 樣式修正 */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        
+        /* Markdown 內容微調 */
         .markdown-body ul { list-style-type: disc; margin-left: 1.5rem; }
-        .markdown-body ol { list-style-type: decimal; margin-left: 1.5rem; }
         .markdown-body p { margin-bottom: 0.5rem; }
-        .markdown-body strong { color: #0369a1; }
 
         /* 打字動畫 */
         .typing-dot { animation: typing 1.4s infinite ease-in-out both; }
@@ -37,100 +46,98 @@
 </head>
 <body class="h-screen flex overflow-hidden">
 
-    <aside class="w-64 bg-white border-r border-gray-200 hidden lg:flex flex-col z-20 shadow-sm">
-        <div class="h-16 flex items-center px-6 border-b border-gray-100">
-            <div class="w-8 h-8 bg-blue-600 rounded text-white flex items-center justify-center font-bold text-lg mr-3 shadow-lg">翰</div>
-            <span class="text-xl font-bold text-slate-800 tracking-wide">雲端學院</span>
+    <aside class="w-64 bg-white border-r border-slate-100 hidden lg:flex flex-col z-20">
+        <div class="h-16 flex items-center px-6">
+            <div class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm mr-2 shadow-sm">翰</div>
+            <span class="text-lg font-bold text-slate-800 tracking-tight">雲端學院</span>
         </div>
 
-        <div class="p-6">
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-center">
-                <div class="w-16 h-16 mx-auto bg-blue-50 rounded-full flex items-center justify-center text-2xl text-blue-600 mb-3 border-2 border-white shadow-sm">
+        <div class="px-4 py-6">
+            <div class="bg-white border border-slate-50 rounded-2xl p-6 text-center shadow-sm">
+                <div class="w-16 h-16 mx-auto bg-blue-50 rounded-full flex items-center justify-center text-2xl text-blue-500 mb-3">
                     <i class="fas fa-user-graduate"></i>
                 </div>
-                <h3 class="font-bold text-gray-800 text-lg" id="sideUserName">--</h3>
-                <div class="text-xs text-gray-500 mb-3" id="sideUserRole">--</div>
-                <button onclick="openProfileModal()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1 rounded-full transition">
+                <h3 class="font-bold text-slate-800 text-base" id="sideUserName">--</h3>
+                <div class="text-xs text-slate-400 mt-1 mb-3" id="sideUserRole">--</div>
+                <button onclick="openProfileModal()" class="text-[10px] font-bold text-slate-400 border border-slate-200 px-3 py-1 rounded-full hover:bg-slate-50 transition">
                     <i class="fas fa-pen mr-1"></i> 編輯年級
                 </button>
             </div>
         </div>
 
-        <nav class="flex-grow px-4 space-y-1 overflow-y-auto no-scrollbar">
-            <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 text-blue-700 font-bold">
-                <i class="fas fa-th-large w-5"></i> 課程總覽
+        <nav class="flex-grow px-3 space-y-1 overflow-y-auto no-scrollbar">
+            <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl nav-item-inactive transition text-sm">
+                <i class="fas fa-th-large w-5 text-center"></i> 課程總覽
             </a>
-            <a href="remedial.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition">
-                <i class="fas fa-book-medical w-5"></i> 錯題補救
+            <a href="remedial.html" class="flex items-center gap-3 px-4 py-3 rounded-xl nav-item-inactive transition text-sm">
+                <i class="fas fa-book-medical w-5 text-center"></i> 錯題補救
             </a>
-            <a href="analysis.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition">
-                <i class="fas fa-chart-pie w-5"></i> 學習分析
+            <a href="analysis.html" class="flex items-center gap-3 px-4 py-3 rounded-xl nav-item-inactive transition text-sm">
+                <i class="fas fa-chart-pie w-5 text-center"></i> 學習分析
             </a>
-            <a href="forum.html" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-50 hover:bg-gray-50 hover:text-gray-900 transition">
-                <i class="fas fa-comments w-5"></i> 解題論壇
+            <a href="forum.html" class="flex items-center gap-3 px-4 py-3 rounded-xl nav-item-active text-sm">
+                <i class="fas fa-comments w-5 text-center"></i> 解題論壇
             </a>
         </nav>
 
-        <div class="p-4 border-t border-gray-200">
-            <button onclick="Auth.logout()" class="w-full flex items-center justify-center gap-2 text-gray-500 hover:text-red-500 py-2 transition">
+        <div class="p-4 border-t border-slate-50">
+            <button onclick="Auth.logout()" class="w-full flex items-center justify-center gap-2 text-slate-400 hover:text-red-500 py-3 transition font-medium text-xs">
                 <i class="fas fa-sign-out-alt"></i> 登出系統
             </button>
         </div>
     </aside>
 
-    <main class="flex-grow flex flex-col h-full relative">
-        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 z-10">
+    <main class="flex-grow flex flex-col h-full relative overflow-hidden bg-[#fcfdfe]">
+        <header class="h-16 bg-white border-b border-slate-100 flex items-center justify-between px-8 shrink-0 z-10">
             <div class="flex items-center gap-3">
-                <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
-                    <i class="fas fa-comments text-blue-500"></i> 解題討論區
-                </h2>
-                <span class="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full font-bold">
-                    <i class="fas fa-check-circle"></i> AI 助教已連線
+                <h2 class="text-lg font-bold text-slate-800">解題討論區</h2>
+                <span class="text-slate-200">|</span>
+                <span class="text-[10px] bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full font-bold border border-emerald-100 uppercase tracking-wider">
+                    <i class="fas fa-circle text-[6px] mr-1.5 align-middle"></i> AI Online
                 </span>
             </div>
             
-            <button onclick="toggleForm()" class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-5 py-2 rounded-xl text-sm font-bold hover:shadow-lg transition transform active:scale-95 flex items-center gap-2">
-                <i class="fas fa-pen"></i> 我要發問
+            <button onclick="toggleForm()" class="bg-blue-600 text-white px-5 py-2 rounded-xl text-xs font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-100 flex items-center gap-2">
+                <i class="fas fa-plus"></i> 我要提問
             </button>
         </header>
 
-        <div class="flex-grow overflow-y-auto p-6 md:p-8 bg-[#f4f6f8]" id="scrollContainer">
+        <div class="flex-grow overflow-y-auto p-8 no-scrollbar" id="scrollContainer">
             <div class="max-w-3xl mx-auto pb-20">
                 
-                <div id="postForm" class="bg-white p-6 rounded-2xl shadow-lg border border-blue-100 mb-8 hidden fade-in relative">
-                    <button onclick="toggleForm()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
-                    <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
-                        <span class="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center text-sm"><i class="fas fa-question"></i></span>
+                <div id="postForm" class="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-50 mb-8 hidden fade-in relative">
+                    <button onclick="toggleForm()" class="absolute top-6 right-6 text-slate-300 hover:text-slate-500 transition"><i class="fas fa-times"></i></button>
+                    <h3 class="font-bold text-slate-800 mb-6 flex items-center gap-2 text-base">
+                        <span class="bg-blue-50 text-blue-500 w-8 h-8 rounded-full flex items-center justify-center text-sm"><i class="fas fa-question"></i></span>
                         建立新提問
                     </h3>
                     <div class="space-y-4">
-                        <input id="postTitle" type="text" placeholder="標題：例如「高一數學三角函數問題」..." class="w-full p-3 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:border-blue-500 font-bold">
-                        <textarea id="postContent" placeholder="請詳細描述問題，AI 助教將會為您解答..." class="w-full p-3 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:border-blue-500 h-32 resize-none"></textarea>
-                        <div class="flex justify-between items-center">
-                            <span class="text-xs text-gray-400 flex items-center gap-1">
-                                <i class="fas fa-robot text-blue-500"></i> Gemini AI 準備就緒
+                        <input id="postTitle" type="text" placeholder="標題：例如「高一數學三角函數問題」..." class="w-full p-4 border border-slate-100 rounded-2xl bg-slate-50/50 focus:outline-none focus:border-blue-200 font-bold transition">
+                        <textarea id="postContent" placeholder="請詳細描述問題，AI 助教將會為您解答..." class="w-full p-4 border border-slate-100 rounded-2xl bg-slate-50/50 focus:outline-none focus:border-blue-200 h-32 resize-none transition"></textarea>
+                        <div class="flex justify-between items-center pt-2">
+                            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-2">
+                                <i class="fas fa-robot text-blue-400"></i> Powered by Gemini AI
                             </span>
-                            <button onclick="addPost()" class="bg-blue-600 text-white px-8 py-2.5 rounded-xl font-bold hover:bg-blue-700 transition shadow-md">發佈問題</button>
+                            <button onclick="addPost()" class="bg-slate-800 text-white px-8 py-3 rounded-2xl font-bold hover:bg-slate-900 transition text-sm">發佈問題</button>
                         </div>
                     </div>
                 </div>
 
                 <div id="postList" class="space-y-6"></div>
 
-                <div id="aiThinking" class="hidden mt-4 bg-white p-4 rounded-2xl border border-gray-200 flex items-center gap-3 w-fit mx-auto shadow-sm">
-                    <div class="w-8 h-8 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-lg"><i class="fas fa-robot"></i></div>
+                <div id="aiThinking" class="hidden mt-6 bg-white px-6 py-4 rounded-full border border-slate-100 flex items-center gap-3 w-fit mx-auto shadow-sm">
+                    <div class="w-6 h-6 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center text-xs"><i class="fas fa-robot"></i></div>
                     <div class="flex gap-1">
-                        <div class="w-2 h-2 bg-indigo-400 rounded-full typing-dot"></div>
-                        <div class="w-2 h-2 bg-indigo-400 rounded-full typing-dot"></div>
-                        <div class="w-2 h-2 bg-indigo-400 rounded-full typing-dot"></div>
+                        <div class="w-1.5 h-1.5 bg-blue-300 rounded-full typing-dot"></div>
+                        <div class="w-1.5 h-1.5 bg-blue-300 rounded-full typing-dot"></div>
+                        <div class="w-1.5 h-1.5 bg-blue-300 rounded-full typing-dot"></div>
                     </div>
-                    <span class="text-xs text-gray-500 font-bold">Gemini 助教正在撰寫詳解...</span>
+                    <span class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Assistant is thinking</span>
                 </div>
 
             </div>
         </div>
     </main>
-
     <script>
         const currentUser = Auth.requireLogin();
         if (currentUser) {
