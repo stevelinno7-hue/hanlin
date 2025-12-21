@@ -1,27 +1,13 @@
 (function(global){
     'use strict';
 
-    // 定義啟動函式
     function init() {
-        // 1. 檢查引擎是否就緒 (等待機制)
         const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
-        
-        // 如果引擎還沒好，等待 100ms 後重試
-        if (!G || !G.registerTemplate) {
-            setTimeout(init, 100);
-            return;
-        }
-
-        // 引擎已就緒，取出工具
+        if (!G || !G.registerTemplate) { setTimeout(init, 100); return; }
         const { pick, shuffle } = G.utils;
 
-        // ==========================================
-        //  地理科核心資料庫 (Geography Core Database)
-        //  欄位說明：
-        //  s:科目, t:[年級,單元], e:名詞/主題, y:特徵/現象, 
-        //  p:成因/作用, k:關鍵字/地點, d:詳細解釋
-        // ==========================================
         const geoDB = [
+            // [國七] 台灣地理
             { s:"地理", t:["國七","地形"], e:"河谷地形", y:"V型谷", p:"河流侵蝕", k:"上游", d:"河流上游侵蝕力強，下切形成深谷" },
             { s:"地理", t:["國七","地形"], e:"沖積扇", y:"扇狀堆積", p:"河流堆積", k:"谷口", d:"河流出谷口流速減緩，泥沙堆積成扇狀" },
             { s:"地理", t:["國七","地形"], e:"三角洲", y:"河口堆積", p:"河流", k:"出海口", d:"河流入海處流速極慢，泥沙堆積成三角形" },
@@ -30,73 +16,42 @@
             { s:"地理", t:["國七","氣候"], e:"季風氣候", y:"夏雨冬乾", p:"海陸性質差異", k:"轉向", d:"夏季吹海風多雨，冬季吹陸風乾燥" },
             { s:"地理", t:["國七","氣候"], e:"地形雨", y:"迎風坡多雨", p:"地形抬升", k:"背風坡", d:"氣流受山脈阻擋抬升，冷卻凝結降雨" },
             { s:"地理", t:["國七","產業"], e:"集約農業", y:"投入多產出高", p:"水稻", k:"勞力密集", d:"單位面積投入大量勞力與資金的農業" },
+
+            // [國八] 中國地理
             { s:"地理", t:["國八","中國"], e:"黃土高原", y:"窯洞", p:"風力堆積", k:"水土流失", d:"土質疏鬆，易受流水侵蝕，形成溝壑縱橫" },
             { s:"地理", t:["國八","中國"], e:"坎兒井", y:"乾燥氣候", p:"新疆", k:"暗渠", d:"減少水分蒸發的古老水利設施" },
             { s:"地理", t:["國八","中國"], e:"長江三角洲", y:"水鄉澤國", p:"水運", k:"魚米之鄉", d:"河網密布，中國經濟最發達的地區" },
+
+            // [國九] 世界地理
             { s:"地理", t:["國九","世界"], e:"熱帶雨林", y:"亞馬遜", p:"赤道", k:"對流雨", d:"全年高溫多雨，生物多樣性高" },
             { s:"地理", t:["國九","世界"], e:"熱帶莽原", y:"乾溼分明", p:"獅子斑馬", k:"薩凡納", d:"受赤道低壓與副熱帶高壓交替控制，乾溼季明顯" },
             { s:"地理", t:["國九","世界"], e:"地中海型氣候", y:"夏乾冬雨", p:"西風帶", k:"橄欖葡萄", d:"夏季乾燥少雨，冬季受西風吹拂多雨" },
             { s:"地理", t:["國九","世界"], e:"溫帶海洋性", y:"全年有雨", p:"西歐", k:"西風吹拂", d:"終年受西風與暖流影響，氣候溫和濕潤" },
+
+            // [高中] 通論地理
             { s:"地理", t:["高一","地圖"], e:"麥卡托投影", y:"角度正確", p:"航海", k:"高緯放大", d:"適合航海導航，但高緯度面積嚴重變形" },
             { s:"地理", t:["高一","地圖"], e:"等高線", y:"地形起伏", p:"地形圖", k:"閉合曲線", d:"連線上海拔高度相同的點，顯示地形坡度" },
             { s:"地理", t:["高一","GIS"], e:"向量資料", y:"點線面", p:"GIS", k:"幾何圖形", d:"用座標與點線面來儲存地理資訊" },
             { s:"地理", t:["高一","GIS"], e:"網格資料", y:"像元", p:"衛星影像", k:"解析度", d:"將地表切割成網格，紀錄屬性數值" }
         ];
 
-        // ==========================================
-        // 註冊模板 (自動生成兩種題型)
-        // ==========================================
-
-        // 題型 1: 特徵判斷 (Feature)
-        // 問: 關於「河谷地形」，下列何者為其關鍵特徵？ 答: V型谷
-        G.registerTemplate('geo_feat', (ctx, rnd) => {
+        // 註冊模板：地理通用題
+        G.registerTemplate('geo_universal', (ctx, rnd) => {
             const item = pick(geoDB);
             
-            // 誘答：隨機找其他項目的特徵 (y欄位)
-            const wrongPool = geoDB.filter(x => x !== item);
-            const wrongOpts = shuffle(wrongPool).slice(0, 3).map(x => x.y);
-            const opts = shuffle([item.y, ...wrongOpts]);
-
+            // 這裡使用 'y' (特徵) 作為答案選項，你也可以改成 'k' 或其他
+            const opts = shuffle([item.y, ...shuffle(geoDB.filter(x=>x!==item)).slice(0,3).map(x=>x.y)]);
+            
             return {
-                question: `【${item.s}】關於「${item.e}」，下列何者為其關鍵特徵？`,
+                question: `【地理】關於「${item.e}」，下列敘述何者正確？`,
                 options: opts,
                 answer: opts.indexOf(item.y),
-                concept: item.t[1], // 例如: 地形
-                explanation: [
-                    `正確答案：${item.y}`,
-                    `說明：${item.d}`,
-                    `關鍵字：${item.k}`
-                ]
-            };
-        }, ["geography", "地理", "社會", "國七", "國八", "國九", "高一"]);
-
-        // 題型 2: 關鍵字聯想 (Association)
-        // 問: 提到「河谷地形」，通常會聯想到哪個關鍵詞？ 答: 上游
-        G.registerTemplate('geo_key', (ctx, rnd) => {
-            const item = pick(geoDB);
-            
-            // 誘答：隨機找其他項目的關鍵字 (k欄位)
-            const wrongPool = geoDB.filter(x => x !== item);
-            const wrongOpts = shuffle(wrongPool).slice(0, 3).map(x => x.k);
-            const opts = shuffle([item.k, ...wrongOpts]);
-
-            return {
-                question: `【${item.s}】提到「${item.e}」，通常會聯想到哪個關鍵詞或地點？`,
-                options: opts,
-                answer: opts.indexOf(item.k),
                 concept: item.t[1],
-                explanation: [
-                    `正確答案：${item.k}`,
-                    `成因：${item.p}`,
-                    `說明：${item.d}`
-                ]
+                explanation: [`正確答案：${item.y} (${item.d})`]
             };
         }, ["geography", "地理", "社會", "國七", "國八", "國九", "高一"]);
 
-        console.log("✅ 地理題庫 (進階版) 已載入完成。");
+        console.log("✅ 地理題庫已載入完成。");
     }
-
-    // 啟動！
     init();
-
 })(window);
