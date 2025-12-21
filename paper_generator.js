@@ -1,112 +1,82 @@
-(function(window){
+(function(global) {
     'use strict';
-    const G = window.RigorousGenerator || (window.global && window.global.RigorousGenerator);
-    if (!G) return;
 
-    window.generatePaper = function(config) {
-        const { subject, total = 10, tags = [], distribution } = config;
-        
-        console.log(`[PaperGen] 收到組卷請求: 科目=${subject}, 標籤=[${tags.join(',')}]`);
-
-        const allTemplates = Object.values(G.templates);
-        
-        // 1. 科目對應
-        const prefixMap = { 
-            'math': 'math', 'physics': 'phy', 'chemistry': 'chm', 'biology': 'bio', 
-            'english': 'eng', 'chinese': 'chi', 'history': 'his', 'geography': 'geo', 
-            'civics': 'civ', 'earth': 'ear', 'earth_science': 'ear' 
-        };
-        const subjectKey = prefixMap[subject] || subject;
-
-        // 2. 科目初步篩選
-        let pool = allTemplates.filter(t => {
-            const idMatch = t.id.toLowerCase().includes(subjectKey);
-            const tagMatch = t.tags && t.tags.some(tag => 
-                tag.toLowerCase() === subjectKey || 
-                tag.toLowerCase() === subject ||
-                // 中文容錯
-                (subject==='math' && tag==='數學') ||
-                (subject==='chinese' && tag==='國文') ||
-                (subject==='english' && tag==='英文') ||
-                (subject==='physics' && tag==='物理') ||
-                (subject==='chemistry' && tag==='化學') ||
-                (subject==='biology' && tag==='生物') ||
-                (subject==='earth' && tag==='地科') ||
-                (subject==='history' && tag==='歷史') ||
-                (subject==='geography' && tag==='地理') ||
-                (subject==='civics' && tag==='公民')
-            );
-            return idMatch || tagMatch;
-        });
-
-        // 3. 【強制年級鎖定】 (Strict Grade Filter)
-        const gradeKeywords = ['國七','國八','國九','高一','高二','高三'];
-        
-        // 從 tags 中尋找年級標籤 (允許 "國七上" 匹配 "國七")
-        const targetGrade = tags.find(t => gradeKeywords.some(k => t.includes(k)));
-
-        if (targetGrade) {
-            // 提取核心年級 (例如: "國七上" -> "國七")
-            const coreGrade = gradeKeywords.find(k => targetGrade.includes(k));
-            console.log(`🔒 年級鎖定: ${coreGrade} (來源: ${targetGrade})`);
-            
-            // 過濾：題目標籤必須包含這個核心年級
-            // 修正：只要題目標籤"包含"核心年級關鍵字即可 (例如 "國七上" 也算符合 "國七")
-            pool = pool.filter(t => t.tags.some(tag => tag.includes(coreGrade)));
-        } else {
-            console.warn("⚠️ 未偵測到年級標籤，可能導致跨年級出題！");
-        }
-
-        if (pool.length === 0) {
-            console.warn(`[PaperGen] 找不到 [${subject} - ${targetGrade}] 的題目。請確認 curriculum_integrated.js 與 templates 的標籤是否一致 (例如：都有「國七」)`);
-            return fallback(total, `題庫擴充中... (${subject} ${targetGrade})`);
-        }
-
-        // 4. 單元篩選
-        const unitTags = tags.filter(t => 
-            !gradeKeywords.some(g => t.includes(g)) && 
-            t !== subject && t !== subjectKey && 
-            !['數學','國文','英文','自然','社會','學測核心','會考核心','模考'].includes(t)
-        );
-
-        let finalPool = pool;
-        if (unitTags.length > 0) {
-            const strictPool = pool.filter(t => unitTags.some(ut => t.tags.some(tt => tt.includes(ut))));
-            if (strictPool.length > 0) finalPool = strictPool;
-        }
-
-        // 5. 選題
-        let paperQuestions = [];
-        let safetyLoop = 0;
-        while (paperQuestions.length < total && safetyLoop < 200) {
-            addRandomQuestion(finalPool, paperQuestions);
-            safetyLoop++;
-        }
-
-        return G.utils.shuffle(paperQuestions).map((q, i) => ({ ...q, id: i + 1 }));
+    // 確保引擎全域變數存在
+    const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator) || {
+        _templates: {},
+        _templateTags: {},
+        utils: {}
     };
 
-    function addRandomQuestion(pool, list) {
-        if (!pool || pool.length === 0) return;
-        const tmpl = pool[Math.floor(Math.random() * pool.length)];
-        try {
-            const q = tmpl.func({}, Math.random);
-            q.templateId = tmpl.id;
-            list.push(q);
-        } catch (e) {}
-    }
+    /**
+     * PaperGeneratorV2 - 智慧出題引擎
+     * 負責從各科檔案（生物、物理、歷史等）中篩選適合的題目
+     */
+    const PaperGeneratorV2 = {
+        /**
+         * 生成單一題目
+         * @param {string} subject 科目 (e.g., 'math', 'history')
+         * @param {string} grade 年級 (e.g., '國七', '高一')
+         */
+        generate: function(subject, grade) {
+            // 1. 取得所有已註冊的模板 ID
+            const allIds = Object.keys(G._templates);
+            
+            // 2. 篩選符合科目與年級標籤的模板
+            // 我們會檢查標籤是否包含 "history" 且包含 "國七"
+            const candidates = allIds.filter(id => {
+                const tags = G._templateTags[id] || [];
+                const matchSubject = tags.some(t => 
+                    t.toLowerCase() === subject.toLowerCase() || 
+                    (subject === 'social' && ['history', 'geography', 'civics'].includes(t.toLowerCase()))
+                );
+                const matchGrade = tags.includes(grade);
+                return matchSubject && matchGrade;
+            });
 
-    function fallback(count, msg) {
-        return Array(count).fill(0).map((_, i) => ({
-            id: i + 1, question: msg, options: ["A", "B", "C", "D"], answer: 0, concept: "系統訊息"
-        }));
-    }
-    // ===============================
-    // ✅ PaperGenerator Ready Signal
-    // ===============================
-    window.PAPER_GENERATOR_READY = true;
-    window.dispatchEvent(new Event("PaperGeneratorReady"));
+            // 3. 安全退路：如果找不到特定年級，則嘗試只依據科目找題
+            let finalSelection = candidates;
+            if (finalSelection.length === 0) {
+                console.warn(`[Generator] 找不到 ${grade} 的 ${subject} 題目，嘗試放寬條件...`);
+                finalSelection = allIds.filter(id => {
+                    const tags = G._templateTags[id] || [];
+                    return tags.some(t => t.toLowerCase() === subject.toLowerCase());
+                });
+            }
+
+            // 4. 隨機選取一個模板並生成題目資料
+            if (finalSelection.length > 0) {
+                const randomId = finalSelection[Math.floor(Math.random() * finalSelection.length)];
+                const questionData = G.generateQuestion(randomId, { tags: [grade, subject] });
+                
+                // 確保返回格式統一，便於 HTML 渲染
+                return {
+                    id: randomId,
+                    question: questionData.question || "題目載入失敗",
+                    options: questionData.options || ["選項 A", "選項 B", "選項 C", "選項 D"],
+                    answer: questionData.answer !== undefined ? questionData.answer : 0,
+                    concept: questionData.concept || "綜合觀念",
+                    subject: subject,
+                    grade: grade
+                };
+            }
+
+            // 5. 終極保底（避免當機）
+            return {
+                question: `【系統提示】暫無符合 ${subject} ${grade} 的題庫資料。`,
+                options: ["請檢查 JS 檔案載入", "聯絡管理員", "確認標籤設定", "重新整理"],
+                answer: 0,
+                concept: "系統錯誤"
+            };
+        }
+    };
+
+    // 宣告 Ready 狀態，讓 HTML 的 startExamSafely 可以執行
+    global.PaperGeneratorV2 = PaperGeneratorV2;
+    global.PAPER_GENERATOR_READY = true;
     
-    console.log("🚦 PaperGeneratorReady dispatched");
+    // 發送自定義事件
+    console.log("🚀 [PaperGenerator] V2 引擎已就緒");
+    document.dispatchEvent(new CustomEvent("PaperGeneratorReady"));
 
-})(window);
+})(this);
