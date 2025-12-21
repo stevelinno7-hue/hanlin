@@ -10,14 +10,10 @@
 
     const { pick, shuffle } = G.utils;
 
-    // ==========================================
-    // 英文文法題庫（唯一版本，無重複）
-    // q: 題目 / a: 正解 / o: 干擾選項 / tag: [年級, 文法]
-    // ==========================================
-    const grammarDB = [
-       // ----------------------------------------------------
-        // [Topic 1] 基本時態 (Tenses) - 國七/國八
-        // ----------------------------------------------------
+    /* ==========================================
+     * 英文文法題庫（原始資料，完全保留）
+     * ========================================== */
+    const grammarDB = [ // ----------------------------------------------------
         { q: "Listen! The baby _____ in the bedroom.", a: "is crying", o: ["cries","cried","cry"], tag: ["國七","時態"] },
         { q: "My father _____ newspapers every morning.", a: "reads", o: ["read","reading","is reading"], tag: ["國七","時態"] },
         { q: "We _____ a movie last night.", a: "watched", o: ["watch","watching","have watched"], tag: ["國七","時態"] },
@@ -144,34 +140,45 @@
         { q: "We insist _____ your leaving.", a: "on", o: ["in","at","of"], tag: ["高二","片語"] },
         { q: "He is famous _____ his novels.", a: "for", o: ["as","in","to"], tag: ["國九","片語"] }
     ];
-    const JUNIOR = ["國七","國八","國九"];
-    const SENIOR = ["國七","國八","國九","高一","高二","高三"];
+  
 
-    const filterByGrade = grades =>
-      grammarDB.filter(q => grades.includes(q.tag[0]));
+    /* ==========================================
+     * 工具
+     * ========================================== */
+    const byGrade = grade =>
+      grammarDB.filter(q => q.tag[0] === grade);
 
-    const buildQuestion = (item, label) => {
+    const buildQuestion = (item) => {
       const options = shuffle([...new Set([item.a, ...item.o])]);
       return {
         question: item.q,
         options,
         answer: options.indexOf(item.a),
-        concept: `${item.tag[1]}（${label}）`,
-        explanation: [`Level: ${item.tag[0]}`, `Answer: ${item.a}`]
+        concept: item.tag[1],
+        explanation: [
+          `年級：${item.tag[0]}`,
+          `答案：${item.a}`
+        ]
       };
     };
 
-    G.registerTemplate('eng_grammar_junior', () =>
-      buildQuestion(pick(filterByGrade(JUNIOR)), "國中"),
-      ["英文","文法","國中"]
-    );
+    /* ==========================================
+     * 🔥 核心：每個年級一個 template（PaperGen 最愛）
+     * ========================================== */
+    const GRADES = ["國七","國八","國九","高一","高二","高三"];
 
-    G.registerTemplate('eng_grammar_senior', () =>
-      buildQuestion(pick(filterByGrade(SENIOR)), "高中"),
-      ["英文","文法","高中"]
-    );
+    GRADES.forEach(grade => {
+      const pool = byGrade(grade);
+      if (!pool.length) return;
 
-    console.log("✅ 英文題庫已載入（結構修正完成）");
+      G.registerTemplate(
+        `eng_grammar_${grade}`,
+        () => buildQuestion(pick(pool)),
+        ["english", "英文", "文法", grade]
+      );
+    });
+
+    console.log("✅ 英文文法題庫已載入（PaperGen 完全相容版）");
   }
 
   init();
