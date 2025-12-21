@@ -108,310 +108,402 @@
             </div>
         </div>
     </main> 
-    <script>
-    // ==========================================
-    // 全域變數
-    // ==========================================
-    let mockQuestions = [];
-    let currentQIndex = 0;
-    let userAnswers = [];
-    let timeLeft = 0;
-    let timerInterval;
-    let examInfo = {};
+<script>
+(function () {
+  'use strict';
 
-    // DOM 快取
-    const els = {
-        title: document.getElementById('examTitle'),
-        sub: document.getElementById('examSubject'),
-        qText: document.getElementById('questionText'),
-        opts: document.getElementById('optionsContainer'),
-        currNum: document.getElementById('currentQNum'),
-        totalNum: document.getElementById('totalQNum'),
-        progress: document.getElementById('progressBar'),
-        prev: document.getElementById('prevBtn'),
-        next: document.getElementById('nextBtn'),
-        timer: document.getElementById('timer'),
-        submit: document.getElementById('submitBtnTop'),
-        badge: document.getElementById('conceptBadge'),
-        palette: document.getElementById('questionPalette')
+  let mockQuestions = [];
+  let currentQIndex = 0;
+  let userAnswers = [];
+  let timeLeft = 0;
+  let timerInterval;
+  let examInfo = {};
+
+  const els = {
+    title: document.getElementById('examTitle'),
+    sub: document.getElementById('examSubject'),
+    qText: document.getElementById('questionText'),
+    opts: document.getElementById('optionsContainer'),
+    currNum: document.getElementById('currentQNum'),
+    totalNum: document.getElementById('totalQNum'),
+    progress: document.getElementById('progressBar'),
+    prev: document.getElementById('prevBtn'),
+    next: document.getElementById('nextBtn'),
+    timer: document.getElementById('timer'),
+    submit: document.getElementById('submitBtnTop'),
+    badge: document.getElementById('conceptBadge'),
+    palette: document.getElementById('questionPalette')
+  };
+
+  const BADGE_CLASS_MAP = {
+    red: 'text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide border bg-red-100 text-red-700 border-red-200',
+    green: 'text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide border bg-green-100 text-green-700 border-green-200',
+    blue: 'text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide border bg-blue-100 text-blue-700 border-blue-200',
+    purple: 'text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide border bg-purple-100 text-purple-700 border-purple-200',
+    gray: 'text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide border bg-gray-100 text-gray-700 border-gray-200'
+  };
+
+  function waitForGenerator(timeout = 2000) {
+    return new Promise((resolve) => {
+      const start = Date.now();
+      function check() {
+        const G = window.RigorousGenerator || (window.global && window.global.RigorousGenerator);
+        const P = window.PaperGeneratorV2;
+        const ready = (P && typeof P.generate === 'function') || (G && G._templates && Object.keys(G._templates).length > 0 && typeof G.generateQuestion === 'function');
+        if (ready) return resolve(true);
+        if (Date.now() - start > timeout) return resolve(false);
+        setTimeout(check, 60);
+      }
+      check();
+    });
+  }
+
+  // ======= 混合裂變題生成 =======
+  function makeQuestionsWithFission(subject, count = 10, courseTags = [], fissionRatio = 0.4) {
+    const P = window.PaperGeneratorV2;
+    const G = window.RigorousGenerator || (window.global && window.global.RigorousGenerator);
+    const results = [];
+    const fissionCount = Math.floor(count * fissionRatio);
+    const normalCount = count - fissionCount;
+
+    // 生成裂變題
+    for (let i = 0; i < fissionCount; i++) {
+      let q = P.generate(subject);
+      if (G && G._templates && G.autoFissionRegister) {
+        const fissionTemplates = Object.keys(G._templates).filter(id => id.includes('_fission_'));
+        if (fissionTemplates.length) {
+          const tid = fissionTemplates[Math.floor(Math.random() * fissionTemplates.length)];
+          const fq = G.generateQuestion(tid);
+          if (fq) q = { ...fq, concept: (fq.concept || '') + " (應用)" };
+        }
+      }
+      results.push(q);
+    }
+
+    // 生成剩餘原始題
+    for (let i = 0; i < normalCount; i++) {
+      results.push(P.generate(subject));
+    }
+
+    // 打亂順序
+    return results.sort(() => Math.random() - 0.5);
+  }
+
+  function normalizeQuestions(raw) {
+    return raw.map((q, idx) => {
+      if (!q || typeof q !== 'object') return { question: String(q || '題目內容缺失'), options: ['無選項'], answer: 0, concept: '一般題型' };
+      const question = q.question || q.q || '題目內容缺失';
+      const options = Array.isArray(q.options) ? q.options.slice() : ['無選項'];
+      const answer = (typeof q.answer === 'number') ? q.answer : 0;
+      const concept = q.concept || '一般題型';
+      if (options.length === 1) options.push('（無更多選項）');
+      return { question: String(question), options, answer, concept };
+    });
+  }
+
+  // ======= 題型統計 badge =======
+  function computeConceptStats() {
+    const stats = {};
+    mockQuestions.forEach(q => {
+      const c = q.concept || '其他';
+      stats[c] = (stats[c] || 0) + 1;
+    });
+    return stats;
+  }
+
+  function renderConceptBadge() {
+    const stats = computeConceptStats();
+    const arr = Object.entries(stats).map(([k,v])=>`${k} ${v}`);
+    els.badge.textContent = arr.join(' / ');
+    els.badge.className = BADGE_CLASS_MAP.purple;
+  }
+
+  function renderQuestion() {
+    const q = mockQuestions[currentQIndex];
+    if (!q) return;
+
+    els.currNum.textContent = currentQIndex + 1;
+    els.qText.innerHTML = q.question.replace(/\n/g, '<br>');
+
+    // 選項
+    els.opts.innerHTML = '';
+    q.options.forEach((opt, idx) => {
+      const isSelected = userAnswers[currentQIndex] === idx;
+      const label = String.fromCharCode(65 + idx);
+      const btn = document.createElement('button');
+      btn.className = `option-card w-full text-left p-4 rounded-xl flex items-center group relative ${isSelected ? 'selected' : 'bg-white text-gray-700'}`;
+      btn.innerHTML = `<span class="option-badge w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full font-bold mr-4 border transition-colors ${isSelected ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'}">${label}</span><span class="text-lg leading-snug font-medium">${opt}</span>`;
+      btn.onclick = () => { userAnswers[currentQIndex] = idx; renderQuestion(); updatePaletteStatus(); };
+      els.opts.appendChild(btn);
+    });
+
+    if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
+      MathJax.typesetPromise([els.qText, els.opts]).catch(err => console.warn(err));
+    }
+
+    els.progress.style.width = `${((currentQIndex + 1) / mockQuestions.length) * 100}%`;
+    updateNav();
+    updatePaletteStatus();
+    renderConceptBadge();
+  }
+
+  function renderPalette() {
+    els.palette.innerHTML = '';
+    mockQuestions.forEach((_, idx) => {
+      const btn = document.createElement('button');
+      btn.className = 'q-nav-btn';
+      btn.textContent = idx + 1;
+      btn.id = `palette-btn-${idx}`;
+      btn.onclick = () => { currentQIndex = idx; renderQuestion(); };
+      els.palette.appendChild(btn);
+    });
+  }
+
+  function updatePaletteStatus() {
+    mockQuestions.forEach((_, idx) => {
+      const btn = document.getElementById(`palette-btn-${idx}`);
+      if (!btn) return;
+      btn.classList.toggle('active', idx === currentQIndex);
+      btn.classList.toggle('answered', userAnswers[idx] !== null && userAnswers[idx] !== undefined);
+    });
+  }
+
+  function updateNav() {
+    els.prev.disabled = currentQIndex === 0;
+    if (currentQIndex === mockQuestions.length - 1) {
+      els.next.innerHTML = '交卷 <i class="fas fa-check ml-2"></i>';
+      els.next.className = "bg-green-600 text-white px-6 py-2 rounded-lg font-bold shadow-md hover:bg-green-700 transition flex items-center gap-2";
+      els.next.onclick = finishExam;
+    } else {
+      els.next.innerHTML = '下一題 <i class="fas fa-arrow-right ml-2"></i>';
+      els.next.className = "bg-white border border-gray-300 hover:border-blue-500 text-gray-700 px-6 py-2 rounded-lg font-bold shadow-sm transition flex items-center gap-2";
+      els.next.onclick = () => { currentQIndex++; renderQuestion(); };
+    }
+  }
+
+  els.prev.onclick = () => { if(currentQIndex > 0) { currentQIndex--; renderQuestion(); }};
+  els.submit.onclick = finishExam;
+
+  function startTimer() {
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+      timeLeft--;
+      const m = String(Math.floor(timeLeft/60)).padStart(2,'0');
+      const s = String(timeLeft%60).padStart(2,'0');
+      els.timer.textContent = `${m}:${s}`;
+      if (timeLeft <= 0) { clearInterval(timerInterval); finishExam(true); }
+    }, 1000);
+  }
+
+  function finishExam(isAuto=false) {
+    const unanswered = userAnswers.filter(a=>a===null||a===undefined).length;
+    if(!isAuto && unanswered>0) { if(!confirm(`還有 ${unanswered} 題未作答，確定交卷？`)) return; }
+    clearInterval(timerInterval);
+
+    let correctCount = 0, wrongList=[];
+    mockQuestions.forEach((q, idx) => {
+      if(userAnswers[idx]===q.answer) correctCount++;
+      else wrongList.push({ question:q.question, options:q.options, correctAns:q.answer, yourAns:userAnswers[idx], explanation:q.explanation||"參考課本內容", concept:q.concept });
+    });
+
+    const record = {
+      id: Date.now(),
+      date: new Date().toLocaleString(),
+      subject: examInfo.subject,
+      title: examInfo.title,
+      score: Math.round((correctCount/mockQuestions.length)*100),
+      correctCount,
+      totalCount:mockQuestions.length,
+      wrongList
     };
 
-    // ==========================================
-    // 1. 初始化與啟動
-    // ==========================================
-    window.onload = function() {
-        if (typeof Auth !== 'undefined' && !Auth.requireLogin()) return;
+    const username = (window.currentUser && window.currentUser.username) || "guest";
+    const storageKey = `history_${username}`;
+    let history = JSON.parse(localStorage.getItem(storageKey) || "[]");
+    history.push(record);
+    localStorage.setItem(storageKey, JSON.stringify(history));
+    localStorage.setItem('examResult', JSON.stringify(record));
+    window.location.href = "analysis.html";
+  }
 
-        // 初始化課程資料庫
-        if (window.initCurriculumData) {
-            window.initCurriculumData();
-        } else if (window.CurriculumLibrary && window.CurriculumLibrary.data) {
-            let all = [];
-            const d = window.CurriculumLibrary.data;
-            if(d.junior_all) all = all.concat(d.junior_all);
-            if(d.senior_all) all = all.concat(d.senior_all);
-            window.Curriculum108 = all;
-        }
+  async function prepareExam() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const subject = urlParams.get('subject') || 'math';
+    const count = parseInt(urlParams.get('count')) || 10;
+    const ready = await waitForGenerator(1500);
 
-        // 確保引擎加載完成後啟動
-        setTimeout(prepareExam, 200);
+    let rawQuestions = makeQuestionsWithFission(subject, count, [], 0.4);
+    mockQuestions = normalizeQuestions(rawQuestions);
+    if(mockQuestions.length===0) mockQuestions = normalizeQuestions([{question:'系統錯誤：無題目可顯示',options:['重新整理'],'answer':0,'concept':'系統'}]);
+
+    userAnswers = new Array(mockQuestions.length).fill(null);
+    examInfo = { subject: subject.toUpperCase(), title: `${subject} 測驗`, timeLimit: count*60 };
+    timeLeft = examInfo.timeLimit;
+
+    els.title.textContent = examInfo.title;
+    els.sub.textContent = examInfo.subject;
+    els.totalNum.textContent = mockQuestions.length;
+
+    renderPalette();
+    renderQuestion();
+    startTimer();
+  }
+
+  window.addEventListener('load', () => {
+    prepareExam().catch(e=>console.error(e));
+  });
+
+})();
+</script>
+
+<script>
+(function(global){
+    'use strict';
+
+    // ================================
+    // 1. PaperGeneratorV2 主體 + 擴充
+    // ================================
+    const SUBJECT_MAP = {
+        'social': ['history', 'geography', 'civics', '歷史', '地理', '公民', '社會'],
+        'natural': ['physics', 'chemistry', 'biology', 'earth_science', '物理', '化學', '生物', '地科', '自然'],
+        'math': ['math', '數學'],
+        'chinese': ['chinese', '國文'],
+        'english': ['english', '英文']
     };
 
-    // ==========================================
-    // 2. 測驗準備與生成
-    // ==========================================
-    function prepareExam() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const courseId = urlParams.get('id');
-        let subject = urlParams.get('subject') || 'math';
-        const count = parseInt(urlParams.get('count')) || 10;
+    const PaperGeneratorV2 = {
+        generate: function(subjectReq, gradeReq) {
+            const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
+            if (!G) return this.createFallbackQuestion("引擎未就緒", "請檢查核心 JS 是否載入");
 
-        // 科目 Mapping
-        if (subject === 'earth_science') subject = 'earth'; 
-        if (subject === 'social') subject = 'history';
-
-        // 尋找課程與標籤
-        let targetCourse = null;
-        if (window.Curriculum108) {
-            for (let book of window.Curriculum108) {
-                if (book.courses) {
-                    const found = book.courses.find(c => c.id === courseId);
-                    if (found) { targetCourse = found; break; }
-                }
-            }
-        }
-        const courseTags = targetCourse ? targetCourse.tags : [];
-
-        // 生成考卷
-        if (window.generatePaper) {
-            mockQuestions = window.generatePaper({
-                subject: subject,
-                total: count,
-                tags: courseTags
+            const targetTags = SUBJECT_MAP[subjectReq] || [subjectReq];
+            const allIds = Object.keys(G._templates || {});
+            let candidates = allIds.filter(id => {
+                const qTags = G._templateTags?.[id] || [];
+                const hasSub = qTags.some(t => targetTags.some(target => t.toLowerCase().includes(target.toLowerCase())));
+                const hasGrade = !gradeReq || qTags.some(t => t.includes(gradeReq));
+                return hasSub && hasGrade;
             });
-        }
 
-        // 題目格式標準化 (防止 concept 或 options 缺失導致報錯)
-        mockQuestions = mockQuestions.map(q => ({
-            ...q,
-            question: q.question || "題目內容缺失",
-            options: q.options || ["無選項"],
-            answer: typeof q.answer === 'number' ? q.answer : 0,
-            concept: q.concept || (q.tag ? q.tag[1] : "一般題型") // 支援不同題庫格式
-        }));
-
-        if (mockQuestions.length === 0) {
-            alert("目前該章節無可用題目，請嘗試切換科目。");
-            return;
-        }
-
-        userAnswers = new Array(mockQuestions.length).fill(null);
-        examInfo = {
-            subject: subject.toUpperCase(),
-            title: targetCourse ? targetCourse.name : `${subject} 測驗`,
-            timeLimit: count * 60
-        };
-        timeLeft = examInfo.timeLimit;
-
-        // UI 初始化
-        els.title.textContent = examInfo.title;
-        els.sub.textContent = examInfo.subject;
-        els.totalNum.textContent = mockQuestions.length;
-        
-        renderPalette();
-        renderQuestion();
-        startTimer();
-    }
-
-    // ==========================================
-    // 3. 題目渲染 (修復 .includes 報錯)
-    // ==========================================
-    function renderQuestion() {
-        const q = mockQuestions[currentQIndex];
-        if (!q) return;
-
-        els.currNum.textContent = currentQIndex + 1;
-        els.qText.innerHTML = q.question.replace(/\n/g, '<br>');
-        
-        // --- 標籤與顏色處理 (強化防錯) ---
-        // --- 標籤與顏色處理（超強防呆版） ---
-let conceptRaw = q.concept;
-
-// 保證一定轉成乾淨字串
-let conceptStr = "";
-if (conceptRaw === undefined || conceptRaw === null) {
-    conceptStr = "綜合題型";
-} else if (Array.isArray(conceptRaw)) {
-    conceptStr = conceptRaw.join(" / ");
-} else if (typeof conceptRaw === "object") {
-    conceptStr = JSON.stringify(conceptRaw);
-} else {
-    conceptStr = String(conceptRaw);
-}
-
-els.badge.textContent = conceptStr;
-
-// --- 顏色分類 ---
-let tagColor = "purple";
-
-if (
-    conceptStr.includes("分析") ||
-    conceptStr.includes("推論") ||
-    conceptStr.includes("難")
-) {
-    tagColor = "red";
-} else if (
-    conceptStr.includes("應用") ||
-    conceptStr.includes("素養") ||
-    conceptStr.includes("理解")
-) {
-    tagColor = "green";
-} else if (
-    conceptStr.includes("記憶") ||
-    conceptStr.includes("基礎")
-) {
-    tagColor = "blue";
-}
-
-els.badge.className =
-    `text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide border bg-${tagColor}-100 text-${tagColor}-700 border-${tagColor}-200`;
-
-
-        els.badge.className = `text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide border bg-${tagColor}-100 text-${tagColor}-700 border-${tagColor}-200`;
-
-        // --- 選項渲染 ---
-        els.opts.innerHTML = '';
-        q.options.forEach((opt, idx) => {
-            const btn = document.createElement('button');
-            const isSelected = userAnswers[currentQIndex] === idx;
-            const label = String.fromCharCode(65 + idx);
-            
-            btn.className = `option-card w-full text-left p-4 rounded-xl flex items-center group relative ${isSelected ? 'selected' : 'bg-white text-gray-700'}`;
-            btn.innerHTML = `
-                <span class="option-badge w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full font-bold mr-4 border transition-colors ${isSelected ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'}">${label}</span>
-                <span class="text-lg leading-snug font-medium">${opt}</span>
-            `;
-            
-            btn.onclick = () => {
-                userAnswers[currentQIndex] = idx;
-                renderQuestion();
-                updatePaletteStatus();
-            };
-            els.opts.appendChild(btn);
-        });
-
-        // MathJax 渲染
-        if (window.MathJax) {
-            MathJax.typesetPromise([els.qText, els.opts]).catch(err => console.warn(err));
-        }
-
-        // 進度條
-        els.progress.style.width = `${((currentQIndex + 1) / mockQuestions.length) * 100}%`;
-        updateNav();
-        updatePaletteStatus();
-    }
-
-    // ==========================================
-    // 4. UI 操作組件
-    // ==========================================
-    function renderPalette() {
-        els.palette.innerHTML = '';
-        mockQuestions.forEach((_, idx) => {
-            const btn = document.createElement('button');
-            btn.className = 'q-nav-btn';
-            btn.textContent = idx + 1;
-            btn.id = `palette-btn-${idx}`;
-            btn.onclick = () => { currentQIndex = idx; renderQuestion(); };
-            els.palette.appendChild(btn);
-        });
-    }
-
-    function updatePaletteStatus() {
-        mockQuestions.forEach((_, idx) => {
-            const btn = document.getElementById(`palette-btn-${idx}`);
-            if (!btn) return;
-            btn.classList.toggle('active', idx === currentQIndex);
-            btn.classList.toggle('answered', userAnswers[idx] !== null);
-        });
-    }
-
-    function updateNav() {
-        els.prev.disabled = currentQIndex === 0;
-        if (currentQIndex === mockQuestions.length - 1) {
-            els.next.innerHTML = '交卷 <i class="fas fa-check ml-2"></i>';
-            els.next.className = "bg-green-600 text-white px-6 py-2 rounded-lg font-bold shadow-md hover:bg-green-700 transition flex items-center gap-2";
-            els.next.onclick = finishExam;
-        } else {
-            els.next.innerHTML = '下一題 <i class="fas fa-arrow-right ml-2"></i>';
-            els.next.className = "bg-white border border-gray-300 hover:border-blue-500 text-gray-700 px-6 py-2 rounded-lg font-bold shadow-sm transition flex items-center gap-2";
-            els.next.onclick = () => { currentQIndex++; renderQuestion(); };
-        }
-    }
-
-    els.prev.onclick = () => { if(currentQIndex > 0) { currentQIndex--; renderQuestion(); }};
-    els.submit.onclick = finishExam;
-
-    // ==========================================
-    // 5. 計時與交卷邏輯
-    // ==========================================
-    function startTimer() {
-        if (timerInterval) clearInterval(timerInterval);
-        timerInterval = setInterval(() => {
-            timeLeft--;
-            const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
-            const s = (timeLeft % 60).toString().padStart(2, '0');
-            els.timer.textContent = `${m}:${s}`;
-            if (timeLeft <= 0) {
-                clearInterval(timerInterval);
-                finishExam(true);
-            }
-        }, 1000);
-    }
-
-    function finishExam(isAuto = false) {
-        const unanswered = userAnswers.filter(a => a === null).length;
-        if (!isAuto && unanswered > 0) {
-            if (!confirm(`還有 ${unanswered} 題未作答，確定交卷？`)) return;
-        }
-
-        clearInterval(timerInterval);
-        let correctCount = 0;
-        let wrongList = [];
-
-        mockQuestions.forEach((q, idx) => {
-            if (userAnswers[idx] === q.answer) correctCount++;
-            else {
-                wrongList.push({
-                    question: q.question,
-                    options: q.options,
-                    correctAns: q.answer,
-                    yourAns: userAnswers[idx],
-                    explanation: q.explanation || "參考課本相關內容",
-                    concept: q.concept || "一般題型"
+            // 降級策略
+            if (candidates.length === 0) {
+                candidates = allIds.filter(id => {
+                    const qTags = G._templateTags?.[id] || [];
+                    return qTags.some(t => targetTags.some(target => t.toLowerCase().includes(target.toLowerCase())));
                 });
             }
-        });
 
-        const record = {
-            id: Date.now(),
-            date: new Date().toLocaleString(),
-            subject: examInfo.subject,
-            title: examInfo.title,
-            score: Math.round((correctCount / mockQuestions.length) * 100),
-            correctCount,
-            totalCount: mockQuestions.length,
-            wrongList
+            if (candidates.length === 0) {
+                return this.createFallbackQuestion(subjectReq, gradeReq, "題庫中無符合標籤之題目");
+            }
+
+            const templateId = candidates[Math.floor(Math.random() * candidates.length)];
+            const questionData = G.generateQuestion?.(templateId) || {};
+            return {
+                question: questionData.question || "題目內容缺失",
+                options: questionData.options || ["無選項"],
+                answer: typeof questionData.answer === 'number' ? questionData.answer : 0,
+                concept: questionData.concept || "一般題型",
+                subject: subjectReq,
+                grade: gradeReq
+            };
+        },
+
+        createFallbackQuestion: function(sub, grd, reason) {
+            return {
+                question: `<div style="color:red">【系統訊息：${reason}】</div>請確認 <b>templates_${sub}_core.js</b> 是否正確載入。`,
+                options: ["請檢查檔案路徑", "請確認標籤定義", "重新整理"],
+                answer: 0,
+                concept: "除錯提示"
+            };
+        }
+    };
+
+    global.PaperGeneratorV2 = PaperGeneratorV2;
+    console.log("✅ PaperGeneratorV2 已就緒");
+
+})(this);
+</script>
+
+<script>
+(function(global){
+    'use strict';
+
+    function initFissionFactory() {
+        const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
+        if (!G || !G.utils) { setTimeout(initFissionFactory, 50); return; }
+
+        const DB = {
+            roles: ["AI工程師", "YouTuber", "外送員", "偵探", "太空人", "主廚", "電競選手", "魔法師", "科學家", "工程師"],
+            places: ["在便利商店", "在火星基地", "在古老圖書館", "在直播間", "在無人島", "在跨年晚會", "在實驗室", "在競賽場地"],
+            formats: [
+                { type: "news", tpl: q=>`【快訊】${q} 專家分析結果` },
+                { type: "chat", tpl: q=>`A：「考你一題：${q}」 B：「這簡單...」` },
+                { type: "diary", tpl: q=>`【日記】老師問了：${q}` },
+                { type: "guide", tpl: q=>`【攻略】新手教學：${q}` },
+                { type: "problem", tpl: q=>`【挑戰題】解決此問題：${q}` }
+            ]
         };
 
-        const username = (window.currentUser && window.currentUser.username) || "guest";
-        const storageKey = `history_${username}`;
-        let history = JSON.parse(localStorage.getItem(storageKey) || "[]");
-        history.push(record);
-        
-        localStorage.setItem(storageKey, JSON.stringify(history));
-        localStorage.setItem('examResult', JSON.stringify(record));
-        window.location.href = "analysis.html";
+        const CONTEXT_WRAPPERS = { 'standard': q => q };
+        const { pick, shuffle } = G.utils;
+
+        // 20種情境裂變
+        for (let i = 0; i < 20; i++) {
+            CONTEXT_WRAPPERS[`role_py_${i}`] = q => {
+                const r = pick(DB.roles);
+                const p = pick(DB.places);
+                return `【情境：${r}】你${p}遇到問題：「${q}」請以專業身份回答。`;
+            };
+        }
+        DB.formats.forEach(fmt => CONTEXT_WRAPPERS[fmt.type] = fmt.tpl);
+
+        G.autoFissionRegister = function(origId, origFunc, tags, rawRegister) {
+            rawRegister.call(G, origId, origFunc, tags);
+            const keys = Object.keys(CONTEXT_WRAPPERS).filter(k => k!=='standard');
+            const key = pick(keys);
+            const wrapper = CONTEXT_WRAPPERS[key];
+            const fissionId = `${origId}_fission_${key}`;
+
+            const newFunc = function(ctx, rnd) {
+                const data = origFunc(ctx, rnd);
+                if (data && typeof data.question==='string') {
+                    return {
+                        ...data,
+                        question: wrapper(data.question),
+                        concept: `${data.concept || ''} (應用)`,
+                        templateId: fissionId
+                    };
+                }
+                return data;
+            };
+            rawRegister.call(G, fissionId, newFunc, [...tags, "素養","裂變"]);
+        };
+        console.log("✅ 裂變工廠就緒");
     }
+
+    window.addEventListener('load', function() {
+        const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
+        if (!G || !G.autoFissionRegister) { setTimeout(initFissionFactory, 50); } 
+        else initFissionFactory();
+
+        function bootstrap(G) {
+            if (!G._rawRegister) G._rawRegister = G.registerTemplate;
+            G.registerTemplate = function(name, func, tags=[]) {
+                try { G.autoFissionRegister(name, func, tags, G._rawRegister); }
+                catch(e){ G._rawRegister.call(G, name, func, tags); }
+            };
+            console.log("🚀 裂變攔截器啟動");
+        }
+
+        if (G) bootstrap(G);
+        else setTimeout(() => {
+            const G2 = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
+            if(G2) bootstrap(G2);
+        }, 300);
+    });
+})(this);
 </script>
+
 </body>
 </html>
