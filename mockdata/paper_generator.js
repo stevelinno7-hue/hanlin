@@ -45,37 +45,54 @@
 
         log("可用 templates", templates);
 
-        // 2️⃣ 開始出題（允許重複 template）
-        const paper = [];
+        // 2️⃣ 出題（🚫 題幹不重複，🛑 抽不到就停）
+const paper = [];
+const usedQuestions = new Set();
 
-        for (let i = 0; i < count; i++) {
-            let q = null;
-            let tries = 0;
+let safety = 0;
+let consecutiveFail = 0;
+const MAX_ATTEMPTS = count * 20;
+const MAX_CONSECUTIVE_FAIL = 10; // ⭐ 關鍵：抽不到新題就停
 
-            while (!q && tries < 10) {
-                const tplName = templates[Math.floor(Math.random() * templates.length)];
-                try {
-                    q = G.generateFromTemplate(tplName);
-                } catch (e) {
-                    warn("template 失敗", tplName, e);
-                }
-                tries++;
-            }
+while (paper.length < count && safety < MAX_ATTEMPTS) {
+    safety++;
 
-            if (!q) {
-                err("單題出題失敗，但不 fallback", i);
-                continue;
-            }
+    let q = null;
+    let tries = 0;
 
-            paper.push({
-                id: i + 1,
-                ...q
-            });
+    while (!q && tries < 10) {
+        const tplName = templates[Math.floor(Math.random() * templates.length)];
+        try {
+            q = G.generateFromTemplate(tplName);
+        } catch (e) {
+            warn("template 失敗", tplName, e);
         }
-
-        log(`完成出題 ${paper.length}/${count}`);
-        return paper;
+        tries++;
     }
+
+    if (!q || !q.question) {
+        consecutiveFail++;
+        if (consecutiveFail >= MAX_CONSECUTIVE_FAIL) break;
+        continue;
+    }
+
+    // 🚫 題幹重複
+    if (usedQuestions.has(q.question)) {
+        consecutiveFail++;
+        if (consecutiveFail >= MAX_CONSECUTIVE_FAIL) break;
+        continue;
+    }
+
+    // ✅ 成功取得新題
+    consecutiveFail = 0;
+    usedQuestions.add(q.question);
+
+    paper.push({
+        id: paper.length + 1,
+        ...q
+    });
+}
+
 
     // 3️⃣ 對外掛載（只提供一個 API）
     global.PaperGenerator = {
