@@ -1,27 +1,23 @@
 (function () {
-    'use strict';
+  'use strict';
 
-    function init() {
-        if (!window.AutoTemplateFissionFactory) {
-            setTimeout(init, 50);
-            return;
-        }
+  function init() {
+    if (!window.AutoTemplateFissionFactory?.utils) {
+      setTimeout(init, 50);
+      return;
+    }
 
-        const Factory = window.AutoTemplateFissionFactory;
-        const { pick, shuffle } = Factory.utils;
+    const Factory = window.AutoTemplateFissionFactory;
+    const { pick, shuffle } = Factory.utils;
 
-        // ✅【關鍵 1】分類註冊一定要在這裡
-        Factory.registerCategory(
-            "chinese",
-            ["國文", "chinese"]
-        );
-
-        // ===============================
-        // 國文核心資料庫
-        // ===============================
-        const chiData = [
-            // （你原本的資料，完全不用動）
-             { q: "白駒過隙", a: "形容時間過得很快", tag: ["國七","成語"] },
+    // ===============================
+    // 國文資料（簡化示例，可自行擴充）
+    // ===============================
+    const DB = [
+        // ------------------------------------------
+        // 1. 成語判讀 (Idioms)
+        // ------------------------------------------
+        { q: "白駒過隙", a: "形容時間過得很快", tag: ["國七","成語"] },
         { q: "指鹿為馬", a: "比喻混淆是非", tag: ["國七","成語"] },
         { q: "畫蛇添足", a: "比喻多此一舉", tag: ["國七","成語"] },
         { q: "杯弓蛇影", a: "比喻疑神疑鬼，自相驚擾", tag: ["國七","成語"] },
@@ -161,71 +157,42 @@
         { q: "狼之獨步", a: "紀弦 (現代詩)", tag: ["高三","現代文"] },
         { q: "一桿稱仔", a: "賴和 (台灣新文學之父)", tag: ["高三","現代文"] },
         { q: "壓不扁的玫瑰", a: "楊逵 (抗日精神)", tag: ["高三","現代文"] }
-        ];
+    ];
 
-        // ===============================
-        // 嚴格依年級過濾
-        // ===============================
-        function byGrade(grade) {
-            return chiData.filter(x => x.tag[0] === grade);
-        }
 
-        function byGradeAndCat(grade, cat) {
-            return chiData.filter(x => x.tag[0] === grade && x.tag[1] === cat);
-        }
-
-        function makeQuestion(grade, reverse = false) {
-            const gradeData = byGrade(grade);
-            if (gradeData.length < 4) return null;
-
-            let base, pool, tries = 0;
-
-            while (tries++ < 20) {
-                base = pick(gradeData);
-                pool = byGradeAndCat(grade, base.tag[1]).filter(x => x !== base);
-                if (pool.length >= 3) break;
-            }
-
-            if (!base || pool.length < 3) return null;
-
-            if (!reverse) {
-                const wrong = shuffle(pool).slice(0, 3).map(x => x.a);
-                const options = shuffle([base.a, ...wrong]);
-
-                return {
-                    question: `【${grade}｜${base.tag[1]}】「${base.q}」的意思為何？`,
-                    options,
-                    answer: options.indexOf(base.a),
-                    concept: base.tag[1],
-                    explanation: [`正確答案：${base.a}`]
-                };
-            }
-
-            const wrong = shuffle(pool).slice(0, 3).map(x => x.q);
-            const options = shuffle([base.q, ...wrong]);
-
-            return {
-                question: `【${grade}｜${base.tag[1]}】下列哪一項符合「${base.a}」？`,
-                options,
-                answer: options.indexOf(base.q),
-                concept: base.tag[1],
-                explanation: [`${base.q} → ${base.a}`]
-            };
-        }
-
-        // ===============================
-        // 正式註冊（PaperGenerator 可讀）
-        // ===============================
-        ["國七", "國八", "國九", "高一", "高二", "高三"].forEach(grade => {
-            Factory.register(
-                "chinese",
-                grade,
-                () => makeQuestion(grade, Math.random() < 0.4)
-            );
-        });
-
-        console.log("✅ 國文題庫【完全鎖年級】已成功註冊（含分類）");
+    function byGrade(g) {
+      return DB.filter(x => x.g === g);
     }
 
-    init();
+    function makeQuestion(grade) {
+      const pool = byGrade(grade);
+      if (pool.length < 4) return null;
+
+      const base = pick(pool);
+      const wrong = shuffle(pool.filter(x => x !== base))
+        .slice(0, 3)
+        .map(x => x.a);
+
+      const options = shuffle([base.a, ...wrong]);
+
+      return {
+        question: `【國文｜${grade}｜${base.c}】「${base.q}」的意思是？`,
+        options,
+        answer: options.indexOf(base.a),
+        concept: base.c,
+        explanation: [`正解：${base.a}`]
+      };
+    }
+
+    // ===============================
+    // 註冊
+    // ===============================
+    ["國七", "國八", "國九", "高一", "高二", "高三"].forEach(g => {
+      Factory.register("chinese", g, () => makeQuestion(g));
+    });
+
+    console.log("✅ 國文題庫（SAFE）已載入");
+  }
+
+  init();
 })();
