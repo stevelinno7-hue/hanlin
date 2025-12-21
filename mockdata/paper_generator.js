@@ -1,7 +1,8 @@
 (function () {
   'use strict';
 
-  console.log("🔥 PaperGen v3.1 LOADED");
+  console.log("🔥 PAPER GEN VERSION 2025-01-DEBUG");
+
 
   /* ================================
    * 年級 alias
