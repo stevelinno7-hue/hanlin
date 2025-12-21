@@ -1,4 +1,4 @@
-// ✅ 在最外層加上 load 監聽器，確保它是最後一個執行的
+// ✅ 關鍵修正：加上 load 監聽器，確保它是最後一個執行的
 window.addEventListener('load', function() {
     'use strict';
 
