@@ -104,7 +104,7 @@
       ]);
 
       return {
-        question: `【地理】關於「${item.e}」，下列何者正確？`,
+        question: `【歷史】關於「${item.e}」，下列何者正確？`,
         options: opts,
         answer: opts.indexOf(item.y),
         concept: item.t[1],
