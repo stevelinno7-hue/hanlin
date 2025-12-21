@@ -1,14 +1,15 @@
 (function (global) {
-    'use strict';
+  'use strict';
 
-    function init() {
-        const G = global.RigorousGenerator || window.RigorousGenerator;
-        if (!G || !G.registerTemplate || !G.utils) {
-            setTimeout(init, 100);
-            return;
-        }
+  function init() {
+    const G = global.RigorousGenerator;
+    if (!G || !G.registerTemplate || !G.utils) {
+      setTimeout(init, 100);
+      return;
+    }
 
-        const { pick, shuffle } = G.utils;
+    const { pick, shuffle } = G.utils;
+
 
         // ===============================
         // 你的國文資料（完全不動）
