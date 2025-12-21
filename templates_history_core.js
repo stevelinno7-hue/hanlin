@@ -1,14 +1,15 @@
 (function(global){
     'use strict';
-    const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
-    if (!G) return;
-    const { pick, shuffle } = G.utils;
 
-    // ==========================================
-    // 社會科全方位資料庫 (Social Studies Mega DB)
-    // 包含：歷史(台/中/世)、地理、公民
-    // ==========================================
-    const socialDB = [
+    function init() {
+        const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
+        if (!G || !G.registerTemplate) {
+            setTimeout(init, 100);
+            return;
+        }
+
+        const { pick, shuffle } = G.utils;
+    const geoDB = [
         // ----------------------------------------------------
         // [歷史 - 台灣史] (Prehistory ~ Modern)
         // ----------------------------------------------------
@@ -131,43 +132,32 @@
         { s:"公民", t:["高一","法律"], e:"比例原則", y:"憲法第23條", p:"大法官", k:"最小侵害", d:"國家限制人民權利手段必須必要且適當" }
     ];
 
-   // ==========================================
-    // 註冊模板 (分科註冊)
-    // ==========================================
-    const subjects = [
-        { name: "歷史", code: "his" },
-        { name: "地理", code: "geo" },
-        { name: "公民", code: "civ" }
-    ];
-
-    subjects.forEach(subj => {
-        // 1. 篩選
-        const subData = socialDB.filter(item => item.s === subj.name);
-        if (subData.length === 0) return;
-
-        // 2. 註冊 (特徵題)
-        G.registerTemplate(`${subj.code}_feat`, (ctx, rnd) => {
-            const item = pick(subData);
-            const wrong = shuffle(subData.filter(x => x !== item)).slice(0, 3).map(x => x.y);
+   // 特徵題
+        G.registerTemplate('his_feat', (ctx, rnd) => {
+            const item = pick(socialDB);
+            const wrong = shuffle(socialDB.filter(x => x !== item)).slice(0, 3).map(x => x.y);
             const opts = shuffle([item.y, ...wrong]);
             return {
-                question: `【${item.s}】關於「${item.e}」，下列何者為其關鍵特徵？`,
+                question: `【${item.s}】關於「${item.e}」，下列何者為其關鍵特徵或年代？`,
                 options: opts, answer: opts.indexOf(item.y), concept: item.t[1],
-                explanation: [`${item.e}：${item.y}`]
+                explanation: [`${item.e}：${item.d} (${item.y})`]
             };
-        }, [subj.name, "社會", "記憶"]);
+        }, ["history", "歷史", "社會", "國七", "國八", "國九"]);
 
-        // 3. 註冊 (關鍵字題)
-        G.registerTemplate(`${subj.code}_key`, (ctx, rnd) => {
-            const item = pick(subData);
-            const wrong = shuffle(subData.filter(x => x !== item)).slice(0, 3).map(x => x.k);
+        // 關鍵字題
+        G.registerTemplate('his_key', (ctx, rnd) => {
+            const item = pick(socialDB);
+            const wrong = shuffle(socialDB.filter(x => x !== item)).slice(0, 3).map(x => x.k);
             const opts = shuffle([item.k, ...wrong]);
             return {
                 question: `【${item.s}】提到「${item.e}」，通常會聯想到哪個關鍵詞？`,
                 options: opts, answer: opts.indexOf(item.k), concept: item.t[1],
                 explanation: [`${item.e} 關鍵詞：${item.k}`]
             };
-        }, [subj.name, "社會", "關鍵字"]);
-    });
+        }, ["history", "歷史", "社會", "國七", "國八", "國九"]);
 
-})(this);
+        console.log("✅ 歷史題庫已載入完成。");
+    }
+
+    init();
+})(window);
