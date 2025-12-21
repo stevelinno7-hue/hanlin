@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  console.log("🔥 FINAL PaperGen LOADED");
+  console.log("🔥 FINAL PaperGen LOADED (STABLE)");
 
   /* ================================
    * 年級 alias
@@ -21,7 +21,7 @@
     tags.map(t => GRADE_ALIAS[t] || t);
 
   /* ================================
-   * Generator 取得（❗唯一正確）
+   * Generator 取得
    * ================================ */
   const G = window.RigorousGenerator;
   if (!G) {
@@ -63,21 +63,19 @@
 
     let pool = templates.filter(t =>
       t.tags?.some(tag => subjectKeys.includes(tag)) ||
-      subjectKeys.some(k => t.id.includes(k))
+      subjectKeys.some(k => t.id?.includes(k))
     );
 
     /* ================================
-     * 2️⃣ 年級鎖定（核心）
+     * 2️⃣ 年級鎖定
      * ================================ */
     const coreGrade = normTags.find(t => CORE_GRADES.includes(t));
 
     if (coreGrade) {
       console.log(`🔒 年級鎖定：${coreGrade}`);
       pool = pool.filter(t =>
-        t.tags?.some(tag => tag === coreGrade)
+        t.tags?.includes(coreGrade)
       );
-    } else {
-      console.warn("⚠️ 未指定年級");
     }
 
     if (!pool.length) {
@@ -95,50 +93,53 @@
     );
 
     if (unitTags.length) {
-      const strictPool = pool.filter(t =>
-        unitTags.some(u => t.tags?.some(tt => tt.includes(u)))
+      const filtered = pool.filter(t =>
+        unitTags.some(u =>
+          t.tags?.some(tt => String(tt).includes(u))
+        )
       );
-      if (strictPool.length) pool = strictPool;
+      if (filtered.length) pool = filtered;
     }
 
     /* ================================
-     * 4️⃣ 出題
+     * 4️⃣ 出題（不重複）
      * ================================ */
-    /* ================================
- * 4️⃣ 出題（修正版：不重複）
- * ================================ */
     const result = [];
-    const usedKeys = new Set();
+    const used = new Set();
     let guard = 0;
-    
+
     while (result.length < total && guard++ < 500) {
       const tmpl = pool[Math.floor(Math.random() * pool.length)];
       let q;
-    
+
       try {
         q = tmpl.func({}, Math.random);
       } catch (e) {
         console.warn("⚠️ 題目生成失敗", tmpl.id);
         continue;
       }
-    
-      // 🔑 唯一鍵（模板 + 題幹 + 正解）
+
+      if (!q || !q.question || !q.options) continue;
+
       const key = `${tmpl.id}::${q.question}::${q.answer}`;
-    
-      if (usedKeys.has(key)) continue;
-    
-      usedKeys.add(key);
-      result.push({ ...q, templateId: tmpl.id });
+      if (used.has(key)) continue;
+
+      used.add(key);
+      result.push({
+        ...q,
+        templateId: tmpl.id
+      });
     }
-    
+
     if (result.length < total) {
       console.warn(`⚠️ 題庫不足，只產生 ${result.length}/${total} 題`);
     }
-    
+
     return G.utils.shuffle(result).map((q, i) => ({
       ...q,
       id: i + 1
     }));
+  };
 
   /* ================================
    * fallback
