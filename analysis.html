@@ -87,7 +87,33 @@
                     </div>
                 </div>
 
-                <div class="fade-in" style="animation-delay: 0.1s;">
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 fade-in" style="animation-delay: 0.1s;">
+                    <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <i class="fas fa-user-shield text-red-500"></i> 考試行為診斷
+                    </h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        
+                        <div class="p-5 rounded-xl border" id="timeCheatBox">
+                            <div class="flex items-center gap-3 mb-2">
+                                <i class="fas fa-stopwatch"></i>
+                                <h4 class="font-bold">作答秒數分析</h4>
+                            </div>
+                            <p class="text-sm text-gray-600" id="timeCheatText">分析中...</p>
+                        </div>
+                        
+                        <div class="p-5 rounded-xl border" id="tabCheatBox">
+                            <div class="flex items-center gap-3 mb-2">
+                                <i class="fas fa-window-restore"></i>
+                                <h4 class="font-bold">分頁切換紀錄</h4>
+                            </div>
+                            <p class="text-sm text-gray-600" id="tabCheatText">分析中...</p>
+                        </div>
+                        
+                    </div>
+                </div>
+
+                <div class="fade-in" style="animation-delay: 0.2s;">
                     <div class="flex items-center justify-between mb-4">
                         <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2"><i class="fas fa-exclamation-circle text-red-500"></i> 錯題深度解析</h2>
                     </div>
@@ -125,8 +151,9 @@
             document.getElementById('totalCount').textContent = result.totalCount;
             document.getElementById('examMetaInfo').textContent = `${result.subject || '綜合測驗'} | 測驗時間：${new Date().toLocaleDateString()}`;
 
-            // 雷達圖
+            // 1. 繪製雷達圖
             const baseScore = result.score;
+            // 隨機產生一些波動，讓圖表看起來比較真實
             const randomOffset = () => Math.floor(Math.random() * 20) - 10;
             const labels = ["觀念理解", "邏輯推演", "運算能力", "圖表分析", "素養應用"];
             const data = labels.map(() => Math.min(100, Math.max(40, baseScore + randomOffset())));
@@ -143,12 +170,18 @@
                         pointBackgroundColor: '#2563eb',
                     }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, scales: { r: { min: 0, max: 100, ticks: { display: false } } }, plugins: { legend: { display: false } } }
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    scales: { r: { min: 0, max: 100, ticks: { display: false } } }, 
+                    plugins: { legend: { display: false } } 
+                }
             });
 
-            // ----------------------------------------------------
-            // 錯題渲染邏輯 (重點修改)
-            // ----------------------------------------------------
+            // 2. 呼叫作弊診斷 (這是剛剛缺少的關鍵！)
+            applyCheatResult(result);
+
+            // 3. 渲染錯題列表
             const listContainer = document.getElementById('wrongList');
             
             if (result.wrongList.length === 0) {
@@ -163,7 +196,6 @@
             } else {
                 result.wrongList.forEach((q, idx) => {
                     const explainText = q.explanation ? q.explanation.join('<br>') : "暫無詳細解析";
-                    const collapseId = `explain-${idx}`;
                     
                     // 生成選項列表 HTML
                     let optionsHtml = '';
@@ -232,6 +264,45 @@
                     `;
                 });
             }
+        }
+
+        // 定義作弊診斷函式 (之前被遺漏了)
+        function applyCheatResult(result) {
+            // 如果 result 裡面沒有 cheat 資料，就顯示預設文字
+            if (!result.cheat || !result.tabCheat) {
+                document.getElementById('timeCheatText').textContent = "無可疑記錄";
+                document.getElementById('tabCheatText').textContent = "無分頁切換紀錄";
+                return;
+            }
+
+            // ---------- 秒數作弊 ----------
+            const timeBox = document.getElementById('timeCheatBox');
+            const timeText = document.getElementById('timeCheatText');
+
+            const timeLevel = result.cheat.cheatLevel || 'NORMAL';
+            const timeMap = {
+                NORMAL: ['border-green-200 bg-green-50 text-green-700', '✔ 作答節奏正常'],
+                MEDIUM: ['border-yellow-200 bg-yellow-50 text-yellow-700', '⚠ 部分題目作答過快'],
+                HIGH: ['border-red-200 bg-red-50 text-red-700', '🚨 多題秒數異常，疑似不自然作答']
+            };
+
+            // 清除舊 class
+            timeBox.className = "p-5 rounded-xl border " + timeMap[timeLevel][0];
+            timeText.textContent = `${timeMap[timeLevel][1]}（過快題數：${result.cheat.fastCount || 0}）`;
+
+            // ---------- 分頁作弊 ----------
+            const tabBox = document.getElementById('tabCheatBox');
+            const tabText = document.getElementById('tabCheatText');
+
+            const tabLevel = result.tabCheat.level || 'NORMAL';
+            const tabMap = {
+                NORMAL: ['border-green-200 bg-green-50 text-green-700', '✔ 無異常分頁行為'],
+                MEDIUM: ['border-yellow-200 bg-yellow-50 text-yellow-700', '⚠ 有切換分頁行為'],
+                HIGH: ['border-red-200 bg-red-50 text-red-700', '🚨 多次或長時間離開考試頁']
+            };
+
+            tabBox.className = "p-5 rounded-xl border " + tabMap[tabLevel][0];
+            tabText.textContent = `${tabMap[tabLevel][1]}（切換 ${result.tabCheat.totalSwitch || 0} 次）`;
         }
     </script>
 </body>
