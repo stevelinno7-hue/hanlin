@@ -2,20 +2,23 @@
   'use strict';
 
   function init() {
-    const G = global.RigorousGenerator;
-    if (!G || !G.registerTemplate || !G.utils) {
-      setTimeout(init, 100);
-      return;
-    }
+    try {
+      const G = global.RigorousGenerator;
+      if (!G || !G.registerTemplate || !G.utils) {
+        setTimeout(init, 100);
+        return;
+      }
 
-    const { pick, shuffle } = G.utils;
+      const { pick, shuffle } = G.utils;
 
-
-        // ===============================
-        // 你的國文資料（完全不動）
-        // ===============================
-        const chineseDB = [
-             { q: "白駒過隙", a: "形容時間過得很快", tag: ["國七","成語"] },
+      // ===============================
+      // 國文資料（完全保留）
+      // ===============================
+      const chineseDB = [
+        // ----------------------------------
+        // 1. 成語判讀 (Idioms)
+        // ------------------------------------------
+        { q: "白駒過隙", a: "形容時間過得很快", tag: ["國七","成語"] },
         { q: "指鹿為馬", a: "比喻混淆是非", tag: ["國七","成語"] },
         { q: "畫蛇添足", a: "比喻多此一舉", tag: ["國七","成語"] },
         { q: "杯弓蛇影", a: "比喻疑神疑鬼，自相驚擾", tag: ["國七","成語"] },
@@ -155,77 +158,67 @@
         { q: "狼之獨步", a: "紀弦 (現代詩)", tag: ["高三","現代文"] },
         { q: "一桿稱仔", a: "賴和 (台灣新文學之父)", tag: ["高三","現代文"] },
         { q: "壓不扁的玫瑰", a: "楊逵 (抗日精神)", tag: ["高三","現代文"] }
-   
+    ];
+      function byGrade(grade) {
+        return chineseDB.filter(x => x.tag[0] === grade);
+      }
 
-        ];
+      function byGradeAndType(grade, type) {
+        return chineseDB.filter(
+          x => x.tag[0] === grade && x.tag[1] === type
+        );
+      }
 
-        function byGrade(grade) {
-            return chineseDB.filter(x => x.tag[0] === grade);
+      function makeQuestion(grade) {
+        const pool = byGrade(grade);
+        if (pool.length < 4) return null;
+
+        let item, wrongPool;
+        let tries = 0;
+
+        while (tries < 20) {
+          item = pick(pool);
+          wrongPool = byGradeAndType(grade, item.tag[1])
+            .filter(x => x.q !== item.q);
+          if (wrongPool.length >= 3) break;
+          tries++;
         }
 
-        function byGradeAndType(grade, type) {
-            return chineseDB.filter(
-                x => x.tag[0] === grade && x.tag[1] === type
-            );
-        }
+        if (!item || wrongPool.length < 3) return null;
 
-        function makeQuestion(grade) {
-            const pool = byGrade(grade);
-            if (pool.length < 4) return null;
+        const options = shuffle([
+          item.a,
+          ...shuffle(wrongPool).slice(0, 3).map(x => x.a)
+        ]);
 
-            let item, wrongPool;
-            let tries = 0;
+        return {
+          question: `【國文｜${grade}｜${item.tag[1]}】${item.q}`,
+          options,
+          answer: options.indexOf(item.a),
+          concept: item.tag[1],
+          explanation: [`正確答案：${item.a}`],
+          meta: {
+            subject: "chinese",
+            grade,
+            source: "templates_chinese_core"
+          }
+        };
+      }
 
-            while (tries < 20) {
-                item = pick(pool);
-                wrongPool = byGradeAndType(grade, item.tag[1])
-                    .filter(x => x.q !== item.q);
-                if (wrongPool.length >= 3) break;
-                tries++;
-            }
+      ["國七","國八","國九","高一","高二","高三"].forEach(grade => {
+        G.registerTemplate(
+          `chinese_${grade}`,
+          () => makeQuestion(grade),
+          ["chinese", "國文", grade]
+        );
+      });
 
-            if (!item || wrongPool.length < 3) return null;
+      console.log("✅ 國文題庫（v2.0｜API 統一）載入完成");
 
-            const options = shuffle([
-                item.a,
-                ...shuffle(wrongPool).slice(0, 3).map(x => x.a)
-            ]);
-
-            return {
-                question: `【國文｜${grade}｜${item.tag[1]}】${item.q}`,
-                options,
-                answer: options.indexOf(item.a),
-                concept: item.tag[1],
-                explanation: [`正確答案：${item.a}`]
-            };
-        }
-
-        ["國七","國八","國九","高一","高二","高三"].forEach(grade => {
-            G.registerTemplate(
-                `chinese_${grade}`,
-                () => makeQuestion(grade),
-                ["chinese", "國文", grade]
-            );
-        });
-
-        console.log("✅ 國文題庫（v2.0｜API 已統一）載入完成");
+    } catch (e) {
+      console.error("❌ templates_chinese_core FAILED", e);
     }
-    function init() {
-  try {
-    const G = global.RigorousGenerator;
-    if (!G || !G.registerTemplate || !G.utils) {
-      setTimeout(init, 100);
-      return;
-    }
-
-    const { pick, shuffle } = G.utils;
-
-    // 👇 原本的國文題庫邏輯全部留著
-
-  } catch (e) {
-    console.error("❌ templates_chinese_core FAILED", e);
   }
-}
 
-    init();
+  init();
 })(window);
