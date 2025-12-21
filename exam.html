@@ -42,6 +42,13 @@
     <script src="mockdata/templates_english_vocab_7000.js"></script>
     <script src="mockdata/templates_chinese_core.js"></script>
     <script src="mockdata/templates_history_core.js"></script>
+    <!-- 初始化 Paper -->
+<script>
+document.addEventListener("PaperGeneratorReady", () => {
+    const q = PaperGeneratorV2.generate("chinese", "國七");
+    console.log(q);
+});
+</script>
 </head>
 <body class="h-screen flex flex-col overflow-hidden">
 
