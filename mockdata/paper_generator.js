@@ -5,6 +5,34 @@
     const warn = (...a) => console.warn("⚠️ [PaperGen]", ...a);
     const err  = (...a) => console.error("❌ [PaperGen]", ...a);
 
+    // ==========================================
+    // 等待 Generator 完全就緒
+    // ==========================================
+    function waitForGenerator(cb, tries = 0) {
+        const G = global.RigorousGenerator;
+
+        if (
+            G &&
+            G.templates &&
+            Object.keys(G.templates).length > 0 &&
+            typeof G.generateFromTemplate === 'function'
+        ) {
+            cb(G);
+            return;
+        }
+
+        if (tries > 100) {
+            err("等待 Generator 逾時");
+            cb(null);
+            return;
+        }
+
+        setTimeout(() => waitForGenerator(cb, tries + 1), 50);
+    }
+
+    // ==========================================
+    // 核心出題函式
+    // ==========================================
     function generatePaper(params) {
         const {
             subject,
@@ -13,86 +41,72 @@
             templatePrefix
         } = params || {};
 
-        const G = global.RigorousGenerator;
-
-        if (!G || !G.templates || typeof G.generateFromTemplate !== 'function') {
-            err("RigorousGenerator 尚未就緒");
-            return [];
-        }
-
         if (!subject || !grade) {
             err("缺少 subject 或 grade", params);
             return [];
         }
 
-        log("generatePaper()", { subject, grade, count });
+        let result = [];
 
-        // ① 篩選可用模板（鎖年級）
-        const templates = Object.keys(G.templates).filter(name => {
-            if (templatePrefix && !name.startsWith(templatePrefix)) return false;
-            return name.includes(grade);
+        waitForGenerator((G) => {
+            if (!G) return;
+
+            log("generatePaper()", { subject, grade, count });
+
+            // 只挑符合年級的 template
+            const templates = Object.keys(G.templates).filter(name => {
+                if (templatePrefix && !name.startsWith(templatePrefix)) return false;
+                return name.includes(grade);
+            });
+
+            if (templates.length === 0) {
+                err("找不到 template", { grade, subject });
+                return;
+            }
+
+            const usedStems = new Set();
+            let attempts = 0;
+            const MAX_ATTEMPTS = count * 20;
+
+            while (result.length < count && attempts < MAX_ATTEMPTS) {
+                attempts++;
+
+                const tpl = templates[Math.floor(Math.random() * templates.length)];
+                let q;
+
+                try {
+                    q = G.generateFromTemplate(tpl);
+                } catch {
+                    continue;
+                }
+
+                if (!q || typeof q.question !== 'string') continue;
+
+                const stem = q.question.trim();
+                if (usedStems.has(stem)) continue;
+
+                usedStems.add(stem);
+                result.push({
+                    id: result.length + 1,
+                    ...q
+                });
+            }
+
+            if (result.length < count) {
+                warn(`題目不足，只能出 ${result.length} 題`);
+            }
+
+            log(`完成出題 ${result.length}/${count}`);
         });
 
-        if (templates.length === 0) {
-            err("找不到任何 template", { subject, grade });
-            return [];
-        }
-
-        const paper = [];
-        const usedStems = new Set();
-
-        let attempts = 0;
-        const MAX_ATTEMPTS = count * 20;
-
-        // ② 安全抽題（出到最多就停）
-        while (paper.length < count && attempts < MAX_ATTEMPTS) {
-            attempts++;
-
-            const tplName = templates[Math.floor(Math.random() * templates.length)];
-            let q;
-
-            try {
-                q = G.generateFromTemplate(tplName);
-            } catch (e) {
-                warn("template 失敗", tplName, e);
-                continue;
-            }
-
-            // 結構防呆
-            if (
-                !q ||
-                typeof q.question !== 'string' ||
-                !Array.isArray(q.options) ||
-                typeof q.answer !== 'number'
-            ) {
-                continue;
-            }
-
-            const stem = q.question.trim();
-            if (usedStems.has(stem)) {
-                continue; // 🚫 題幹重複
-            }
-
-            usedStems.add(stem);
-
-            paper.push({
-                id: paper.length + 1,
-                ...q
-            });
-        }
-
-        // ③ 題目不足就老實說
-        if (paper.length < count) {
-            warn(`題目不足，只能出 ${paper.length} 題`);
-        }
-
-        log(`完成出題 ${paper.length}/${count}`);
-        return paper;
+        return result;
     }
 
-    // ④ 全域掛載（新舊系統全相容）
+    // ==========================================
+    // 對外 API
+    // ==========================================
     global.PaperGenerator = { generatePaper };
-    global.paperGenerator = global.PaperGenerator;
+    global.paperGenerator = global.PaperGenerator; // 舊系統相容
     global.PAPER_GENERATOR_READY = true;
 
     window.dispatchEvent(new Event("PaperGeneratorReady"));
