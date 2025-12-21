@@ -5,7 +5,7 @@
     function initFactory() {
         const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
         
-        // 1. 如果引擎還沒好，稍微等一下
+        // 1. 如果引擎還沒好，稍微等一下 (Retry 機制)
         if (!G) {
             setTimeout(initFactory, 50);
             return;
@@ -61,7 +61,10 @@
         //  2. 建構情境生成器 (Context Generators)
         // ==========================================
         const CONTEXT_WRAPPERS = {};
-        const { pick } = G.utils;
+        
+        // 確保 utils 存在，避免報錯
+        const utils = G.utils || { pick: (arr)=>arr[0] }; 
+        const { pick } = utils;
 
         // A. 基礎標準版
         CONTEXT_WRAPPERS['standard'] = (q) => q;
@@ -93,7 +96,9 @@
             // 步驟 B: 進行裂變 (這裡示範隨機挑選一種情境進行變體)
             // 為了不讓題目爆炸多，我們每個題目只額外生成一個變體
             const wrapperKeys = Object.keys(CONTEXT_WRAPPERS).filter(k => k !== 'standard');
-            const randomKey = pick(wrapperKeys);
+            
+            // 防呆：如果沒有情境可用，就用 standard
+            const randomKey = wrapperKeys.length > 0 ? pick(wrapperKeys) : 'standard';
             const wrapperFunc = CONTEXT_WRAPPERS[randomKey];
 
             const fissionId = `${originalId}_fission_${randomKey}`;
@@ -102,7 +107,7 @@
             const newFunc = function(ctx, rnd) {
                 const baseData = originalFunc(ctx, rnd);
                 // 確保題目是字串才能包裝
-                if (typeof baseData.question === 'string') {
+                if (baseData && typeof baseData.question === 'string') {
                     return {
                         ...baseData,
                         question: wrapperFunc(baseData.question),
