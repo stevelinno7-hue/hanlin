@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  console.log("🔥 PAPER GEN VERSION 2025-01-STABLE");
+  console.log("🔥 PAPER GEN VERSION 2025-01-FINAL");
 
   /* ================================
    * 年級 alias
@@ -30,7 +30,7 @@
   }
 
   /* ================================
-   * fallback（一定要有）
+   * fallback（保底）
    * ================================ */
   function fallback(count, msg) {
     return Array.from({ length: count }, (_, i) => ({
@@ -72,8 +72,10 @@
 
     let pool = templates.filter(t =>
       t &&
-      (t.tags?.some(tag => subjectKeys.includes(tag)) ||
-       subjectKeys.some(k => String(t.id).includes(k)))
+      (
+        t.tags?.some(tag => subjectKeys.includes(tag)) ||
+        subjectKeys.some(k => String(t.id).includes(k))
+      )
     );
 
     /* ================================
@@ -108,7 +110,7 @@
     }
 
     /* ================================
-     * 4️⃣ 出題（不重複＋模板冷卻）
+     * 4️⃣ 出題（攤平裂變＋不重複＋模板冷卻）
      * ================================ */
     const result = [];
     const usedKeys = new Set();
@@ -129,27 +131,32 @@
       if (!weightedPool.length) break;
 
       const tmpl = weightedPool[Math.floor(Math.random() * weightedPool.length)];
-      let q;
 
+      let outputs;
       try {
-        q = tmpl.func({}, Math.random);
+        const out = tmpl.func({}, Math.random);
+        outputs = Array.isArray(out) ? out : [out]; // ⭐ 關鍵：攤平
       } catch (e) {
         continue;
       }
 
-      if (!q || !q.question || !Array.isArray(q.options)) continue;
+      for (const q of outputs) {
+        if (!q || !q.question || !Array.isArray(q.options)) continue;
 
-      const key = `${tmpl.id}::${q.question}::${q.answer}`;
-      if (usedKeys.has(key)) continue;
+        const key = `${tmpl.id}::${q.question}::${q.answer}`;
+        if (usedKeys.has(key)) continue;
 
-      usedKeys.add(key);
-      templateCount[tmpl.id] = (templateCount[tmpl.id] || 0) + 1;
+        usedKeys.add(key);
+        templateCount[tmpl.id] = (templateCount[tmpl.id] || 0) + 1;
 
-      result.push({ ...q, templateId: tmpl.id });
+        result.push({ ...q, templateId: tmpl.id });
+
+        if (result.length >= total) break;
+      }
     }
 
     if (!result.length) {
-      console.warn("⚠️ 無法成功出題 → fallback");
+      console.warn("⚠️ 出題失敗 → fallback");
       return fallback(total, `題庫異常（${subject}）`);
     }
 
