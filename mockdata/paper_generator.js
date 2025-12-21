@@ -1,18 +1,18 @@
 (function () {
   'use strict';
 
-  console.log("🔥 FINAL PaperGen LOADED (STABLE)");
+  console.log("🔥 PaperGen v3.0 LOADED");
 
   /* ================================
    * 年級 alias
    * ================================ */
   const GRADE_ALIAS = {
-    "國七上": "國七", "國七下": "國七",
-    "國八上": "國八", "國八下": "國八",
-    "國九上": "國九", "國九下": "國九",
-    "高一上": "高一", "高一下": "高一",
-    "高二上": "高二", "高二下": "高二",
-    "高三上": "高三", "高三下": "高三"
+    國七上: "國七", 國七下: "國七",
+    國八上: "國八", 國八下: "國八",
+    國九上: "國九", 國九下: "國九",
+    高一上: "高一", 高一下: "高一",
+    高二上: "高二", 高二下: "高二",
+    高三上: "高三", 高三下: "高三"
   };
 
   const CORE_GRADES = ["國七", "國八", "國九", "高一", "高二", "高三"];
@@ -30,18 +30,27 @@
   }
 
   /* ================================
+   * fallback
+   * ================================ */
+  function fallback(count, msg) {
+    return Array.from({ length: count }, (_, i) => ({
+      id: i + 1,
+      question: msg,
+      options: ["A", "B", "C", "D"],
+      answer: 0,
+      concept: "系統提示"
+    }));
+  }
+
+  /* ================================
    * 主入口
    * ================================ */
   window.generatePaper = function ({ subject, total = 10, tags = [] }) {
+
     const normTags = normalizeTags(tags);
-
-    console.log("📥 PaperGen Request", {
-      subject,
-      tags,
-      normalizedTags: normTags
-    });
-
     const templates = Object.values(G.templates || {});
+
+    console.log("📥 generatePaper", { subject, tags: normTags });
 
     /* ================================
      * 1️⃣ 科目過濾
@@ -62,24 +71,22 @@
     const subjectKeys = subjectMap[subject] || [subject];
 
     let pool = templates.filter(t =>
-      t.tags?.some(tag => subjectKeys.includes(tag)) ||
-      subjectKeys.some(k => t.id?.includes(k))
+      t &&
+      (t.tags?.some(tag => subjectKeys.includes(tag)) ||
+       subjectKeys.some(k => String(t.id).includes(k)))
     );
 
     /* ================================
      * 2️⃣ 年級鎖定
      * ================================ */
     const coreGrade = normTags.find(t => CORE_GRADES.includes(t));
-
     if (coreGrade) {
+      pool = pool.filter(t => t.tags?.includes(coreGrade));
       console.log(`🔒 年級鎖定：${coreGrade}`);
-      pool = pool.filter(t =>
-        t.tags?.includes(coreGrade)
-      );
     }
 
     if (!pool.length) {
-      console.warn("❌ 題庫為空", { subject, coreGrade });
+      console.warn("❌ 題庫為空");
       return fallback(total, `題庫建置中（${subject} ${coreGrade || ''}）`);
     }
 
@@ -93,38 +100,52 @@
     );
 
     if (unitTags.length) {
-      const filtered = pool.filter(t =>
+      const unitPool = pool.filter(t =>
         unitTags.some(u =>
           t.tags?.some(tt => String(tt).includes(u))
         )
       );
-      if (filtered.length) pool = filtered;
+      if (unitPool.length) pool = unitPool;
     }
 
     /* ================================
-     * 4️⃣ 出題（不重複）
+     * 4️⃣ 出題（不重複＋模板冷卻）
      * ================================ */
     const result = [];
-    const used = new Set();
+    const usedKeys = new Set();
+    const templateCount = {};
+
+    const MAX_PER_TEMPLATE = 2;   // 每模板最多幾題
+    const COOLDOWN_RATE = 0.25;   // 超過後保留機率
+
     let guard = 0;
 
-    while (result.length < total && guard++ < 500) {
-      const tmpl = pool[Math.floor(Math.random() * pool.length)];
+    while (result.length < total && guard++ < 1000) {
+
+      const weightedPool = pool.filter(t => {
+        const used = templateCount[t.id] || 0;
+        return used < MAX_PER_TEMPLATE || Math.random() < COOLDOWN_RATE;
+      });
+
+      if (!weightedPool.length) break;
+
+      const tmpl = weightedPool[Math.floor(Math.random() * weightedPool.length)];
       let q;
 
       try {
         q = tmpl.func({}, Math.random);
-      } catch (e) {
-        console.warn("⚠️ 題目生成失敗", tmpl.id);
+      } catch {
         continue;
       }
 
-      if (!q || !q.question || !q.options) continue;
+      if (!q || !q.question || !Array.isArray(q.options)) continue;
 
       const key = `${tmpl.id}::${q.question}::${q.answer}`;
-      if (used.has(key)) continue;
+      if (usedKeys.has(key)) continue;
 
-      used.add(key);
+      usedKeys.add(key);
+      templateCount[tmpl.id] = (templateCount[tmpl.id] || 0) + 1;
+
       result.push({
         ...q,
         templateId: tmpl.id
@@ -132,7 +153,7 @@
     }
 
     if (result.length < total) {
-      console.warn(`⚠️ 題庫不足，只產生 ${result.length}/${total} 題`);
+      console.warn(`⚠️ 題庫不足：${result.length}/${total}`);
     }
 
     return G.utils.shuffle(result).map((q, i) => ({
@@ -140,18 +161,5 @@
       id: i + 1
     }));
   };
-
-  /* ================================
-   * fallback
-   * ================================ */
-  function fallback(count, msg) {
-    return Array.from({ length: count }, (_, i) => ({
-      id: i + 1,
-      question: msg,
-      options: ["A", "B", "C", "D"],
-      answer: 0,
-      concept: "系統提示"
-    }));
-  }
 
 })();
