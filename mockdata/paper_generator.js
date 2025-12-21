@@ -2,123 +2,67 @@
     'use strict';
 
     const log  = (...a) => console.log("📄 [PaperGen]", ...a);
-    const warn = (...a) => console.warn("⚠️ [PaperGen]", ...a);
     const err  = (...a) => console.error("❌ [PaperGen]", ...a);
 
     // ==========================================
-    // 等待 Generator 完全就緒
-    // ==========================================
-    function waitForGenerator(cb, tries = 0) {
-        const G = global.RigorousGenerator;
-
-        if (
-            G &&
-            G.templates &&
-            Object.keys(G.templates).length > 0 &&
-            typeof G.generateFromTemplate === 'function'
-        ) {
-            cb(G);
-            return;
-        }
-
-        if (tries > 100) {
-            err("等待 Generator 逾時");
-            cb(null);
-            return;
-        }
-
-        setTimeout(() => waitForGenerator(cb, tries + 1), 50);
-    }
-
-    // ==========================================
-    // 核心出題函式
+    // 核心出題函式：改為同步檢索 (假設 Generator 已就緒)
     // ==========================================
     function generatePaper(params) {
         const {
             subject,
-            grade,
             count = 10,
-            templatePrefix
+            tags = [] // 接收來自 exam.html 的課程標籤
         } = params || {};
 
-        if (!subject || !grade) {
-            err("缺少 subject 或 grade", params);
+        const G = global.RigorousGenerator;
+        if (!G || !G.templates) {
+            err("Generator 尚未就緒，請檢查 Script 載入順序");
             return [];
         }
 
-        let result = [];
+        log("開始生成考卷", { subject, tags, count });
 
-        waitForGenerator((G) => {
-            if (!G) return;
-
-            log("generatePaper()", { subject, grade, count });
-
-            // 只挑符合年級的 template
-            const templates = Object.keys(G.templates).filter(name => {
-                if (templatePrefix && !name.startsWith(templatePrefix)) return false;
-                return name.includes(grade);
-            });
-
-            if (templates.length === 0) {
-                err("找不到 template", { grade, subject });
-                return;
+        // 過濾邏輯：優先找符合 tags 的模板，若無則找符合 subject 的
+        let availableTemplates = Object.keys(G.templates).filter(name => {
+            // 如果有傳入標籤 (如 '國八', '多項式')，則進行關鍵字比對
+            if (tags.length > 0) {
+                return tags.some(tag => name.includes(tag));
             }
+            return name.toLowerCase().includes(subject.toLowerCase());
+        });
 
-            const usedStems = new Set();
-            let attempts = 0;
-            const MAX_ATTEMPTS = count * 20;
+        // 備用機制：若標籤過濾不到，拿該科目的所有題目
+        if (availableTemplates.length === 0) {
+            availableTemplates = Object.keys(G.templates);
+        }
 
-            while (result.length < count && attempts < MAX_ATTEMPTS) {
-                attempts++;
+        let result = [];
+        const usedStems = new Set();
+        let attempts = 0;
+        const MAX_ATTEMPTS = count * 30;
 
-                const tpl = templates[Math.floor(Math.random() * templates.length)];
-                let q;
+        while (result.length < count && attempts < MAX_ATTEMPTS) {
+            attempts++;
+            const tplName = availableTemplates[Math.floor(Math.random() * availableTemplates.length)];
+            
+            try {
+                const q = G.generateFromTemplate(tplName);
+                if (!q || usedStems.has(q.question)) continue;
 
-                try {
-                    q = G.generateFromTemplate(tpl);
-                } catch {
-                    continue;
-                }
-
-                if (!q || typeof q.question !== 'string') continue;
-
-                const stem = q.question.trim();
-                if (usedStems.has(stem)) continue;
-
-                usedStems.add(stem);
+                usedStems.add(q.question);
                 result.push({
                     id: result.length + 1,
                     ...q
                 });
-            }
+            } catch (e) { continue; }
+        }
 
-            if (result.length < count) {
-                warn(`題目不足，只能出 ${result.length} 題`);
-            }
-
-            log(`完成出題 ${result.length}/${count}`);
-        });
-
+        log(`成功生成 ${result.length} 題`);
         return result;
     }
 
-    // ==========================================
-    // 對外 API
-    // ==========================================
     global.PaperGenerator = { generatePaper };
-    global.paperGenerator = global.PaperGenerator; // 舊系統相容
+    global.paperGenerator = global.PaperGenerator;
     global.PAPER_GENERATOR_READY = true;
-
     window.dispatchEvent(new Event("PaperGeneratorReady"));
-
-    log("🔥 PAPER GEN VERSION 2025-01-SAFE（NO DUP STEM / NO FALLBACK）已載入");
-    // ===============================
-    // ✅ PaperGenerator Ready Signal
-    // ===============================
-    window.PAPER_GENERATOR_READY = true;
-    window.dispatchEvent(new Event("PaperGeneratorReady"));
-    
-    console.log("🚦 PaperGeneratorReady dispatched");
-    
-
 })(window);
