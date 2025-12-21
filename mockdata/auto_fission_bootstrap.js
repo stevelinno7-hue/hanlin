@@ -1,19 +1,15 @@
+// ✅ 加上 load 監聽器，確保最後執行
 window.addEventListener('load', function() {
     'use strict';
-    console.log("⏳ [Bootstrap] 頁面載入完成，開始檢查依賴...");
+    console.log("⏳ [Bootstrap] 等待頁面載入完成，準備啟動...");
 
     const G = window.RigorousGenerator || (window.global && window.global.RigorousGenerator);
     
-    // 如果找不到，再給最後一次機會 (延遲 500ms)
     if (!G || !G.autoFissionRegister) {
-        console.warn("⚠️ [Bootstrap] 尚未偵測到工廠，嘗試最後等待...");
+        // 如果工廠還沒好，再給一次機會
         setTimeout(() => {
-            if (G && G.autoFissionRegister) {
-                console.log("✅ [Bootstrap] 延遲後成功連接工廠！");
-                startBootstrap(G);
-            } else {
-                console.error("❌ [Bootstrap] 放棄：AutoTemplateFissionFactory 真的未載入。");
-            }
+             if (G && G.autoFissionRegister) startBootstrap(G);
+             else console.error("❌ [Bootstrap] 放棄：工廠未就緒。");
         }, 500);
     } else {
         startBootstrap(G);
@@ -22,6 +18,7 @@ window.addEventListener('load', function() {
     function startBootstrap(G) {
         if (!G._rawRegister) G._rawRegister = G.registerTemplate;
         
+        // 覆寫註冊函數 (攔截器)
         G.registerTemplate = function(name, func, tags = []) {
             try {
                 G.autoFissionRegister(name, func, tags, G._rawRegister);
@@ -29,6 +26,6 @@ window.addEventListener('load', function() {
                 G._rawRegister.call(G, name, func, tags);
             }
         };
-        console.log("🚀 [Bootstrap] 攔截器啟動成功！");
+        console.log("🚀 [Bootstrap] 自動裂變攔截器已成功啟動！");
     }
 });
