@@ -1,150 +1,87 @@
-/**
- * =========================================================
- *  PAPER GENERATOR SAFE FULL VERSION
- *  Version: 2025-01-SAFE-FULL v1.1
- * =========================================================
- * 新增：
- * - 題型可重複使用
- * - 題目內容去重（避免同題）
- * =========================================================
- */
+// mockdata/paper_generator.js
+(function (global) {
+    'use strict';
 
-/* =========================================================
- * 1. 標籤設定
- * ========================================================= */
-export function buildTagProfile({ core, secondary = [], optional = [] }) {
-  if (!core) throw new Error("❌ tagProfile 缺少 core 標籤")
-  return { core, secondary, optional }
-}
+    const log = (...args) => console.log("📄 [PaperGen]", ...args);
+    const warn = (...args) => console.warn("⚠️ [PaperGen]", ...args);
+    const err = (...args) => console.error("❌ [PaperGen]", ...args);
 
-/* =========================================================
- * 2. 題型評分
- * ========================================================= */
-function scoreTemplate(template, tagProfile) {
-  let score = 0
-  tagProfile.secondary.forEach(t => template.tags?.includes(t) && (score += 2))
-  tagProfile.optional.forEach(t => template.tags?.includes(t) && (score += 1))
-  return score
-}
-
-/* =========================================================
- * 3. 題型池選擇（允許重複）
- * ========================================================= */
-function buildTemplatePool({
-  templates,
-  subject,
-  grade,
-  tagProfile
-}) {
-  let pool = templates.filter(t =>
-    t.subject === subject &&
-    t.grade?.includes(grade) &&
-    t.tags?.includes(tagProfile.core)
-  )
-
-  if (pool.length === 0) {
-    console.warn("⚠️ 核心主題無題，降級 subject + grade")
-    pool = templates.filter(t =>
-      t.subject === subject &&
-      t.grade?.includes(grade)
-    )
-  }
-
-  if (pool.length === 0) {
-    console.warn("⚠️ 無符合年級題型，降級 subject-only")
-    pool = templates.filter(t => t.subject === subject)
-  }
-
-  return pool
-}
-
-/* =========================================================
- * 4. 題目生成（內容去重版）
- * ========================================================= */
-function generateQuestions({
-  templatePool,
-  tagProfile,
-  count,
-  maxRetry = 10
-}) {
-  const questions = []
-  const usedContentKeys = new Set()
-
-  // 依題型權重排序（但不移除 → 可重複）
-  const scoredTemplates = templatePool
-    .map(t => ({ t, score: scoreTemplate(t, tagProfile) }))
-    .sort((a, b) => b.score - a.score)
-    .map(x => x.t)
-
-  let guard = 0
-
-  while (questions.length < count && guard < count * maxRetry) {
-    guard++
-
-    const template =
-      scoredTemplates[Math.floor(Math.random() * scoredTemplates.length)]
-
-    let q
-    try {
-      q = template.generate()
-    } catch {
-      continue
+    function waitForGenerator(cb) {
+        const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
+        if (!G || !G.templates || !G.generateFromTemplate) {
+            setTimeout(() => waitForGenerator(cb), 100);
+            return;
+        }
+        cb(G);
     }
 
-    if (!q) continue
+    function generatePaper(params) {
+        const {
+            subject,
+            grade,
+            count = 10,
+            templatePrefix // optional
+        } = params;
 
-    /* -------- 內容指紋（關鍵） -------- */
-    const contentKey =
-      q.contentKey ||
-      q.stem + (q.options?.join("") || "")
+        const G = global.RigorousGenerator;
 
-    if (usedContentKeys.has(contentKey)) {
-      continue // ❌ 同題，跳過
+        if (!subject || !grade) {
+            err("缺少 subject 或 grade", params);
+            return [];
+        }
+
+        log("generatePaper()", params);
+
+        // 1️⃣ 找出可用 templates
+        const templates = Object.keys(G.templates).filter(name => {
+            if (templatePrefix && !name.startsWith(templatePrefix)) return false;
+            return name.includes(grade);
+        });
+
+        if (templates.length === 0) {
+            err("找不到任何 template", { grade, subject });
+            return [];
+        }
+
+        log("可用 templates", templates);
+
+        // 2️⃣ 開始出題（允許重複 template）
+        const paper = [];
+
+        for (let i = 0; i < count; i++) {
+            let q = null;
+            let tries = 0;
+
+            while (!q && tries < 10) {
+                const tplName = templates[Math.floor(Math.random() * templates.length)];
+                try {
+                    q = G.generateFromTemplate(tplName);
+                } catch (e) {
+                    warn("template 失敗", tplName, e);
+                }
+                tries++;
+            }
+
+            if (!q) {
+                err("單題出題失敗，但不 fallback", i);
+                continue;
+            }
+
+            paper.push({
+                id: i + 1,
+                ...q
+            });
+        }
+
+        log(`完成出題 ${paper.length}/${count}`);
+        return paper;
     }
 
-    usedContentKeys.add(contentKey)
-    questions.push(q)
-  }
+    // 3️⃣ 對外掛載（只提供一個 API）
+    global.PaperGenerator = {
+        generatePaper
+    };
 
-  return questions
-}
+    log("🔥 PAPER GEN VERSION 2025-01-SAFE（NO FALLBACK）已載入");
 
-/* =========================================================
- * 5. 對外 API
- * ========================================================= */
-export function generatePaper({
-  templates,
-  subject,
-  grade,
-  count = 10,
-  tagConfig,
-  debug = true
-}) {
-  console.log("⏳ 正在準備測驗...")
-
-  const tagProfile = buildTagProfile(tagConfig)
-
-  const templatePool = buildTemplatePool({
-    templates,
-    subject,
-    grade,
-    tagProfile
-  })
-
-  console.log("📘 可用題型數:", templatePool.length)
-
-  const questions = generateQuestions({
-    templatePool,
-    tagProfile,
-    count
-  })
-
-  if (questions.length < count) {
-    console.warn(
-      `⚠️ 題目不足 ${questions.length}/${count}（已避免重複內容）`
-    )
-  }
-
-  console.log("🎉 試卷生成完成")
-  return questions
-}
+})(window);
