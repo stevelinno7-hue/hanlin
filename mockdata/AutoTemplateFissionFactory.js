@@ -3,9 +3,9 @@
 
     function initFactory() {
         const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
-        if (!G) { setTimeout(initFactory, 50); return; }
+        // 增加對 G.utils 的檢查
+        if (!G || !G.utils) { setTimeout(initFactory, 50); return; }
 
-        // 1. 情境資料庫
         const DB = {
             roles: ["AI工程師", "YouTuber", "外送員", "偵探", "太空人", "主廚", "電競選手", "魔法師"],
             places: ["在便利商店", "在火星基地", "在古老圖書館", "在直播間", "在無人島", "在跨年晚會"],
@@ -20,23 +20,17 @@
         const CONTEXT_WRAPPERS = { 'standard': (q) => q };
         const { pick } = G.utils;
 
-        // 生成隨機角色情境
         for (let i = 0; i < 20; i++) {
-            CONTEXT_WRAPPERS[`roleplay_${i}`] = (q) => {
+            CONTEXT_WRAPPERS[`role_py_${i}`] = (q) => {
                 const r = pick(DB.roles);
                 const p = pick(DB.places);
                 return `【情境：${r}】\n你${p}，遇到一個難題：\n「${q}」\n身為專業的${r}，請選出正確答案。`;
             };
         }
-        // 生成格式情境
         DB.formats.forEach(fmt => { CONTEXT_WRAPPERS[fmt.type] = fmt.tpl; });
 
-        // 2. 掛載裂變功能
         G.autoFissionRegister = function(originalId, originalFunc, tags, rawRegister) {
-            // A. 註冊原始版
             rawRegister.call(G, originalId, originalFunc, tags);
-
-            // B. 註冊變體版 (隨機挑選一種情境包裝)
             const keys = Object.keys(CONTEXT_WRAPPERS).filter(k => k !== 'standard');
             const key = pick(keys);
             const wrapper = CONTEXT_WRAPPERS[key];
@@ -54,11 +48,9 @@
                 }
                 return data;
             };
-            // 變體版多加 "素養" 標籤
-            rawRegister.call(G, fissionId, newFunc, [...tags, "素養題", "情境應用"]);
+            rawRegister.call(G, fissionId, newFunc, [...tags, "素養", "裂變"]);
         };
-
-        console.log(`✅ 自動裂變工廠已就緒 (含 ${Object.keys(CONTEXT_WRAPPERS).length} 種模組)`);
+        console.log("✅ [Factory] 裂變工廠已就緒");
     }
     initFactory();
-})(window);
+})(this);
