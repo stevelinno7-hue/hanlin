@@ -1,185 +1,203 @@
-(function () {
-  'use strict';
+/**
+ * =========================================================
+ *  PAPER GENERATOR SAFE FULL VERSION
+ *  Version: 2025-01-SAFE-FULL
+ * =========================================================
+ * 特色：
+ * - 絕不全 fallback
+ * - 會考導向（核心主題必保）
+ * - 標籤加權，不做 AND 屠殺
+ * - 降級策略可追蹤
+ * =========================================================
+ */
 
-  console.log('🔥 PAPER GEN VERSION 2025-01-SAFE-FINAL');
-
-  /* ================================
-   * 基本設定
-   * ================================ */
-
-  const G = window.RigorousGenerator;
-  if (!G || !G.templates) {
-    console.error('❌ RigorousGenerator or templates not ready');
-    return;
+/* =========================================================
+ * 1. 標籤設定（會考模型）
+ * ========================================================= */
+export function buildTagProfile({
+  core,
+  secondary = [],
+  optional = []
+}) {
+  if (!core) {
+    throw new Error("❌ tagProfile 缺少 core 標籤")
   }
 
-  const CORE_GRADES = ['國七', '國八', '國九', '高一', '高二', '高三'];
+  return {
+    core,
+    secondary,
+    optional
+  }
+}
 
-  const SUBJECT_MAP = {
-    math: ['math', '數學'],
-    english: ['eng', '英文'],
-    chinese: ['chi', '國文'],
-    physics: ['phy', '物理'],
-    chemistry: ['chm', '化學'],
-    biology: ['bio', '生物'],
-    history: ['his', '歷史'],
-    geography: ['geo', '地理'],
-    civics: ['civ', '公民'],
-    earth: ['ear', '地科']
-  };
+/* =========================================================
+ * 2. 題型評分
+ * ========================================================= */
+function scoreTemplate(template, tagProfile) {
+  let score = 0
 
-  /* ================================
-   * 工具：tag 正規化（系統級）
-   * ================================ */
-  function normalizeTags(tags = []) {
-    const out = new Set();
+  tagProfile.secondary.forEach(tag => {
+    if (template.tags?.includes(tag)) score += 2
+  })
 
-    tags.forEach(t => {
-      if (typeof t !== 'string') return;
+  tagProfile.optional.forEach(tag => {
+    if (template.tags?.includes(tag)) score += 1
+  })
 
-      if (t.startsWith('國七')) out.add('國七');
-      else if (t.startsWith('國八')) out.add('國八');
-      else if (t.startsWith('國九')) out.add('國九');
-      else if (t.startsWith('高一')) out.add('高一');
-      else if (t.startsWith('高二')) out.add('高二');
-      else if (t.startsWith('高三')) out.add('高三');
-      else out.add(t);
-    });
+  return score
+}
 
-    return Array.from(out);
+/* =========================================================
+ * 3. 模板選擇（核心）
+ * ========================================================= */
+function selectTemplates({
+  templates,
+  subject,
+  grade,
+  tagProfile,
+  count,
+  debug
+}) {
+  console.log("📥 generatePaper() Object")
+  console.log("🎯 目標:", tagProfile.core)
+
+  /* ---------- Step 0：基本檢查 ---------- */
+  if (!templates || templates.length === 0) {
+    console.error("❌ 題庫為空")
+    return []
   }
 
-  /* ================================
-   * fallback（保命）
-   * ================================ */
-  function fallback(total, msg) {
-    return Array.from({ length: total }, (_, i) => ({
-      id: i + 1,
-      question: msg,
-      options: ['A', 'B', 'C', 'D'],
-      answer: 0,
-      concept: '系統提示',
-      templateId: 'fallback'
-    }));
+  /* ---------- Step 1：核心條件 ---------- */
+  let pool = templates.filter(t =>
+    t.subject === subject &&
+    t.grade?.includes(grade) &&
+    t.tags?.includes(tagProfile.core)
+  )
+
+  console.log("🎯 核心主題命中:", pool.length)
+
+  /* ---------- Step 2：核心全滅 → subject + grade ---------- */
+  if (pool.length === 0) {
+    console.warn("⚠️ 核心主題無題，降級 subject + grade")
+
+    pool = templates.filter(t =>
+      t.subject === subject &&
+      t.grade?.includes(grade)
+    )
+
+    console.log("📘 降級後模板數:", pool.length)
   }
 
-  /* ================================
-   * 主函式（exam.html 唯一入口）
-   * ================================ */
-  window.generatePaper = function ({ subject, total = 10, tags = [] }) {
+  /* ---------- Step 3：再全滅 → subject-only ---------- */
+  if (pool.length === 0) {
+    console.warn("⚠️ 無符合年級題型，降級 subject-only")
 
-    const normTags = normalizeTags(tags);
+    pool = templates.filter(t => t.subject === subject)
 
-    console.log('📥 generatePaper()', {
-      subject,
-      total,
-      tags: normTags
-    });
+    console.log("📗 subject-only 模板數:", pool.length)
+  }
 
-    const subjectKeys = SUBJECT_MAP[subject] || [subject];
-    const templates = Object.values(G.templates);
+  /* ---------- Step 4：評分 ---------- */
+  const scored = pool.map(t => ({
+    ...t,
+    __score: scoreTemplate(t, tagProfile)
+  }))
 
-    /* ================================
-     * 1️⃣ 科目過濾
-     * ================================ */
-    let pool = templates.filter(t =>
-      t &&
-      typeof t.func === 'function' &&
-      (
-        t.tags?.some(tag => subjectKeys.includes(tag)) ||
-        subjectKeys.some(k => String(t.id).includes(k))
-      )
-    );
+  scored.sort((a, b) => b.__score - a.__score)
 
-    /* ================================
-     * 2️⃣ 年級鎖定
-     * ================================ */
-    const grade = normTags.find(t => CORE_GRADES.includes(t));
-    if (grade) {
-      pool = pool.filter(t => t.tags?.includes(grade));
+  if (debug) {
+    console.log(
+      "🏷️ 分數分佈:",
+      scored.map(t => t.__score)
+    )
+  }
+
+  /* ---------- Step 5：取題 ---------- */
+  const selected = scored.slice(0, count)
+
+  if (selected.length === 0) {
+    console.error("🆘 完全無題，啟用最終 fallback")
+
+    return templates
+      .filter(t => t.subject === subject)
+      .slice(0, count)
+  }
+
+  if (debug) {
+    console.table(
+      selected.map(t => ({
+        id: t.id,
+        score: t.__score,
+        tags: t.tags?.join(",")
+      }))
+    )
+  }
+
+  return selected
+}
+
+/* =========================================================
+ * 4. 題目生成（真正對外 API）
+ * ========================================================= */
+export function generatePaper({
+  templates,
+  subject,
+  grade,
+  count = 10,
+  tagConfig,
+  debug = true
+}) {
+  console.log("⏳ 正在準備測驗...")
+
+  const tagProfile = buildTagProfile(tagConfig)
+
+  const selectedTemplates = selectTemplates({
+    templates,
+    subject,
+    grade,
+    tagProfile,
+    count,
+    debug
+  })
+
+  if (selectedTemplates.length === 0) {
+    console.error("❌ 出題失敗，全部 fallback")
+    return []
+  }
+
+  console.log("✅ 成功選出題型:", selectedTemplates.length)
+
+  /* ---------- 真正生成題目 ---------- */
+  const questions = selectedTemplates.map(t => {
+    try {
+      return t.generate()
+    } catch (e) {
+      console.error("❌ 題型生成失敗:", t.id, e)
+      return null
     }
+  }).filter(Boolean)
 
-    if (!pool.length) {
-      console.warn('⚠️ 題庫為空，直接 fallback');
-      return fallback(total, `題庫建置中（${subject}）`);
-    }
+  if (questions.length === 0) {
+    console.error("❌ 題目生成階段失敗")
+  }
 
-    /* ================================
-     * 3️⃣ 出題核心
-     * ================================ */
-    const ctx = Object.freeze({
-      subject,
-      tags: normTags
-    });
+  console.log("🎉 試卷生成完成")
+  return questions
+}
 
-    const result = [];
-    const used = new Set();
-    const templateCount = {};
-
-    const MAX_PER_TEMPLATE = 2;
-    const COOLDOWN_RATE = 0.25;
-
-    let guard = 0;
-
-    while (result.length < total && guard++ < 500) {
-
-      const available = pool.filter(t => {
-        const count = templateCount[t.id] || 0;
-        return count < MAX_PER_TEMPLATE || Math.random() < COOLDOWN_RATE;
-      });
-
-      if (!available.length) break;
-
-      const tmpl = available[Math.floor(Math.random() * available.length)];
-      let q;
-
-      try {
-        q = tmpl.func(ctx, Math.random);
-      } catch (e) {
-        console.warn(`⚠️ template ${tmpl.id} throw error`, e);
-        continue;
-      }
-
-      if (!q) continue;
-
-      if (
-        typeof q.question !== 'string' ||
-        !Array.isArray(q.options) ||
-        typeof q.answer !== 'number'
-      ) {
-        console.warn(`⚠️ template ${tmpl.id} 回傳格式錯誤`);
-        continue;
-      }
-
-      const key = `${tmpl.id}::${q.question}`;
-      if (used.has(key)) continue;
-
-      used.add(key);
-      templateCount[tmpl.id] = (templateCount[tmpl.id] || 0) + 1;
-
-      result.push({
-        id: result.length + 1,
-        question: q.question,
-        options: q.options,
-        answer: q.answer,
-        concept: q.concept || '綜合題型',
-        templateId: tmpl.id
-      });
-    }
-
-    /* ================================
-     * 4️⃣ 不足補 fallback（重要）
-     * ================================ */
-    if (result.length < total) {
-      console.warn(`⚠️ 題目不足 ${result.length}/${total}，補 fallback`);
-      const fill = fallback(total - result.length, `題庫補題中（${subject}）`);
-      fill.forEach(q => {
-        q.id = result.length + 1;
-        result.push(q);
-      });
-    }
-
-    return result;
-  };
-
-})();
+/* =========================================================
+ * 5. 使用範例（你現有系統可直接對接）
+ * ========================================================= */
+/*
+generatePaper({
+  templates: HISTORY_TEMPLATES,
+  subject: "history",
+  grade: "j",
+  count: 10,
+  tagConfig: {
+    core: "台灣史前文化",
+    secondary: ["史前", "考古"],
+    optional: ["長濱文化", "卑南文化"]
+  }
+})
+*/
