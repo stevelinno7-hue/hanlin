@@ -1,8 +1,11 @@
-(function (window) {
+(function () {
   'use strict';
 
   console.log("🔥 FINAL PaperGen LOADED");
 
+  /* ================================
+   * 年級 alias
+   * ================================ */
   const GRADE_ALIAS = {
     "國七上": "國七", "國七下": "國七",
     "國八上": "國八", "國八下": "國八",
@@ -18,27 +21,119 @@
     tags.map(t => GRADE_ALIAS[t] || t);
 
   /* ================================
-   * 主入口（⚠️ G 在這裡才拿）
+   * Generator 取得（❗唯一正確）
+   * ================================ */
+  const G = window.RigorousGenerator;
+  if (!G) {
+    console.error("❌ RigorousGenerator 尚未載入");
+    return;
+  }
+
+  /* ================================
+   * 主入口
    * ================================ */
   window.generatePaper = function ({ subject, total = 10, tags = [] }) {
-    const G = window.RigorousGenerator || window.global?.RigorousGenerator;
-
-    if (!G || !G.templates) {
-      console.warn("⚠️ PaperGen：RigorousGenerator 尚未就緒");
-      return null;
-    }
-
     const normTags = normalizeTags(tags);
 
     console.log("📥 PaperGen Request", {
       subject,
-      rawTags: tags,
+      tags,
       normalizedTags: normTags
     });
 
-    const allTemplates = Object.values(G.templates);
+    const templates = Object.values(G.templates || {});
 
-    // 👉 以下你的邏輯全部可以原封不動
+    /* ================================
+     * 1️⃣ 科目過濾
+     * ================================ */
+    const subjectMap = {
+      math: ['math', '數學'],
+      english: ['eng', '英文'],
+      chinese: ['chi', '國文'],
+      physics: ['phy', '物理'],
+      chemistry: ['chm', '化學'],
+      biology: ['bio', '生物'],
+      history: ['his', '歷史'],
+      geography: ['geo', '地理'],
+      civics: ['civ', '公民'],
+      earth: ['ear', '地科']
+    };
+
+    const subjectKeys = subjectMap[subject] || [subject];
+
+    let pool = templates.filter(t =>
+      t.tags?.some(tag => subjectKeys.includes(tag)) ||
+      subjectKeys.some(k => t.id.includes(k))
+    );
+
+    /* ================================
+     * 2️⃣ 年級鎖定（核心）
+     * ================================ */
+    const coreGrade = normTags.find(t => CORE_GRADES.includes(t));
+
+    if (coreGrade) {
+      console.log(`🔒 年級鎖定：${coreGrade}`);
+      pool = pool.filter(t =>
+        t.tags?.some(tag => tag === coreGrade)
+      );
+    } else {
+      console.warn("⚠️ 未指定年級");
+    }
+
+    if (!pool.length) {
+      console.warn("❌ 題庫為空", { subject, coreGrade });
+      return fallback(total, `題庫建置中（${subject} ${coreGrade || ''}）`);
+    }
+
+    /* ================================
+     * 3️⃣ 單元過濾（可選）
+     * ================================ */
+    const unitTags = normTags.filter(t =>
+      !CORE_GRADES.includes(t) &&
+      !subjectKeys.includes(t) &&
+      !['會考核心', '學測核心', '模考', '核心'].includes(t)
+    );
+
+    if (unitTags.length) {
+      const strictPool = pool.filter(t =>
+        unitTags.some(u => t.tags?.some(tt => tt.includes(u)))
+      );
+      if (strictPool.length) pool = strictPool;
+    }
+
+    /* ================================
+     * 4️⃣ 出題
+     * ================================ */
+    const result = [];
+    let guard = 0;
+
+    while (result.length < total && guard++ < 200) {
+      const tmpl = pool[Math.floor(Math.random() * pool.length)];
+      try {
+        const q = tmpl.func({}, Math.random);
+        result.push({ ...q, templateId: tmpl.id });
+      } catch (e) {
+        console.warn("⚠️ 題目生成失敗", tmpl.id);
+      }
+    }
+
+    return G.utils.shuffle(result).map((q, i) => ({
+      ...q,
+      id: i + 1
+    }));
   };
+
+  /* ================================
+   * fallback
+   * ================================ */
+  function fallback(count, msg) {
+    return Array.from({ length: count }, (_, i) => ({
+      id: i + 1,
+      question: msg,
+      options: ["A", "B", "C", "D"],
+      answer: 0,
+      concept: "系統提示"
+    }));
+  }
 
 })();
