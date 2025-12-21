@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  console.log("🔥 PAPER GEN STABLE 2025-01");
+  console.log("🔥 PAPER GEN VERSION 2025-01-STABLE");
 
   /* ================================
    * 年級 alias
@@ -43,15 +43,18 @@
   }
 
   /* ================================
-   * 主入口
+   * 主入口（exam.html 只吃這個）
    * ================================ */
   window.generatePaper = function ({ subject, total = 10, tags = [] }) {
 
     const normTags = normalizeTags(tags);
-    const templates = Object.values(G.templates || {});
-    console.log("📥 generatePaper", subject, normTags);
+    const templates = Object.values(G.templates || []);
 
-    /* ---------- 科目過濾 ---------- */
+    console.log("📥 generatePaper()", { subject, total, tags: normTags });
+
+    /* ================================
+     * 1️⃣ 科目過濾
+     * ================================ */
     const subjectMap = {
       math: ['math', '數學'],
       english: ['eng', '英文'],
@@ -59,7 +62,10 @@
       physics: ['phy', '物理'],
       chemistry: ['chm', '化學'],
       biology: ['bio', '生物'],
-      history: ['his', '歷史']
+      history: ['his', '歷史'],
+      geography: ['geo', '地理'],
+      civics: ['civ', '公民'],
+      earth: ['ear', '地科']
     };
 
     const subjectKeys = subjectMap[subject] || [subject];
@@ -70,44 +76,81 @@
        subjectKeys.some(k => String(t.id).includes(k)))
     );
 
-    /* ---------- 年級鎖定 ---------- */
+    /* ================================
+     * 2️⃣ 年級鎖定
+     * ================================ */
     const coreGrade = normTags.find(t => CORE_GRADES.includes(t));
     if (coreGrade) {
       pool = pool.filter(t => t.tags?.includes(coreGrade));
     }
 
     if (!pool.length) {
-      console.warn("❌ 題庫為空");
-      return fallback(total, `題庫建置中（${subject}）`);
+      console.warn("❌ 無符合題庫 → fallback");
+      return fallback(total, `題庫建置中（${subject} ${coreGrade || ''}）`);
     }
 
-    /* ---------- 出題 ---------- */
+    /* ================================
+     * 3️⃣ 單元過濾（可選）
+     * ================================ */
+    const unitTags = normTags.filter(t =>
+      !CORE_GRADES.includes(t) &&
+      !subjectKeys.includes(t) &&
+      !['會考核心', '學測核心', '模考', '核心'].includes(t)
+    );
+
+    if (unitTags.length) {
+      const unitPool = pool.filter(t =>
+        unitTags.some(u =>
+          t.tags?.some(tt => String(tt).includes(u))
+        )
+      );
+      if (unitPool.length) pool = unitPool;
+    }
+
+    /* ================================
+     * 4️⃣ 出題（不重複＋模板冷卻）
+     * ================================ */
     const result = [];
-    const used = new Set();
+    const usedKeys = new Set();
+    const templateCount = {};
+
+    const MAX_PER_TEMPLATE = 2;
+    const COOLDOWN_RATE = 0.25;
+
     let guard = 0;
 
-    while (result.length < total && guard++ < 500) {
-      const tmpl = pool[Math.floor(Math.random() * pool.length)];
+    while (result.length < total && guard++ < 800) {
+
+      const weightedPool = pool.filter(t => {
+        const used = templateCount[t.id] || 0;
+        return used < MAX_PER_TEMPLATE || Math.random() < COOLDOWN_RATE;
+      });
+
+      if (!weightedPool.length) break;
+
+      const tmpl = weightedPool[Math.floor(Math.random() * weightedPool.length)];
       let q;
 
       try {
-        // ✅ 保證 rng 是 function
-        q = tmpl.func({}, () => Math.random());
+        q = tmpl.func({}, Math.random);
       } catch (e) {
         continue;
       }
 
       if (!q || !q.question || !Array.isArray(q.options)) continue;
 
-      const key = tmpl.id + q.question;
-      if (used.has(key)) continue;
+      const key = `${tmpl.id}::${q.question}::${q.answer}`;
+      if (usedKeys.has(key)) continue;
 
-      used.add(key);
+      usedKeys.add(key);
+      templateCount[tmpl.id] = (templateCount[tmpl.id] || 0) + 1;
+
       result.push({ ...q, templateId: tmpl.id });
     }
 
     if (!result.length) {
-      return fallback(total, "⚠️ 題目生成失敗");
+      console.warn("⚠️ 無法成功出題 → fallback");
+      return fallback(total, `題庫異常（${subject}）`);
     }
 
     return G.utils.shuffle(result).map((q, i) => ({
