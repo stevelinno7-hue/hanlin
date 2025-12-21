@@ -1,77 +1,43 @@
-// templates_civics_core.js
-// 公民（憲政與權利、法治、社會議題、公共參與、媒體素養）5 類模板
 (function(global){
     'use strict';
 
-    // 定義啟動函式
     function init() {
-        // 1. 檢查引擎是否就緒
         const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
-        
-        // 如果引擎還沒好，等待 100ms 後重試
         if (!G || !G.registerTemplate) {
             setTimeout(init, 100);
             return;
         }
 
-        // 引擎已就緒，取出工具
         const { pick, shuffle } = G.utils;
-        
-        // --- 原本的題目從這裡開始 ---
-  // 1) civics_constitution: 憲政與權利（概念題）
-  function civics_constitution(ctx, rnd){
-    return {
-      question: '憲法保障的基本權利通常包括下列哪幾項？',
-      options: ['言論自由、宗教自由、平等權','只保障財產','只保障軍事權','只保障商業權'],
-      answer: 0,
-      explanation: ['憲法通常保障公民的基本自由與平等權利。']
-    };
-  }
 
-  // 2) civics_rule_of_law: 法治與程序正義（案例判斷）
-  function civics_rule_of_law(ctx, rnd){
-    return {
-      question: '程序正義的核心要素不包括哪一項？',
-      options: ['公開透明、平等對待、正當程序','任意決定、秘密審理','可上訴機制','獨立司法'],
-      answer: 1,
-      explanation: ['程序正義強調公開、平等、正當程序與司法獨立，任意與秘密審理違反程序正義。']
-    };
-  }
+        const civicsDB = [
+            { q: "性別刻板印象是指？", a: "對特定性別的僵化看法", o: ["性別平等", "性騷擾"], t: ["國七","社會"] },
+            { q: "家庭教導子女社會規範與價值觀的過程稱為？", a: "社會化", o: ["教育", "撫養"], t: ["國七","社會"] },
+            { q: "國家對內擁有最高統治權，對外獨立自主，是指？", a: "主權", o: ["政府", "領土"], t: ["國八","政治"] },
+            { q: "行為時法律未規定者，不得處罰，這是什麼原則？", a: "罪刑法定主義", o: ["無罪推定", "法律保留"], t: ["國八","法律"] },
+            { q: "做出選擇時，所放棄的選項中價值最高者，稱為？", a: "機會成本", o: ["沉沒成本", "生產成本"], t: ["國九","經濟"] },
+            { q: "價格上漲，需求量減少，這是什麼法則？", a: "需求法則", o: ["供給法則", "邊際效益"], t: ["國九","經濟"] },
+            { q: "國家權力行使手段必須必要且適當，損害最小，這是？", a: "比例原則", o: ["信賴保護", "法律優位"], t: ["高一","法律"] }
+        ];
 
-  // 3) civics_public_participation: 公共參與與公民責任（行動與影響）
-  function civics_public_participation(ctx, rnd){
-    return {
-      question: '公民參與公共事務的方式不包括下列哪一項？',
-      options: ['投票、參與公聽會、倡議、暴力破壞'],
-      answer: 0,
-      explanation: ['合法且理性的參與方式包括投票、倡議、參與諮詢等，暴力破壞不屬於正當參與。']
-    };
-  }
+        G.registerTemplate('civics_basic', (ctx, rnd) => {
+            const item = pick(civicsDB);
+            // 補足選項
+            let options = [...item.o];
+            while(options.length < 3) options.push("其他");
+            const opts = shuffle([item.a, ...options]);
+            
+            return {
+                question: `【公民 - ${item.t[1]}】${item.q}`,
+                options: opts,
+                answer: opts.indexOf(item.a),
+                concept: item.t[1],
+                explanation: [`正確答案：${item.a}`]
+            };
+        }, ["civics", "公民", "社會", "國七", "國八", "國九", "高一"]);
 
-  // 4) civics_media_literacy: 媒體素養與資訊判讀
-  function civics_media_literacy(ctx, rnd){
-    return {
-      question: '判斷一則網路資訊可信度時，最重要的檢查項目為何？',
-      options: ['來源是否具權威性與可查證','字數是否多','是否有圖片','是否有分享數'],
-      answer: 0,
-      explanation: ['來源與可查證性是判斷資訊可信度的關鍵。']
-    };
-  }
+        console.log("✅ 公民題庫已載入完成。");
+    }
 
-  // 5) civics_social_issues: 社會議題分析（利弊評估）
-  function civics_social_issues(ctx, rnd){
-    return {
-      question: '在討論最低工資調整時，應同時考量哪些面向？',
-      options: ['勞工生活、企業成本、就業影響、物價變動','只考慮企業利潤','只考慮政府支出','只考慮國際關係'],
-      answer: 0,
-      explanation: ['政策評估需兼顧多方利害關係與可能的經濟社會影響。']
-    };
-  }
-
-  global.RigorousGenerator.registerTemplate('civics_constitution', civics_constitution);
-  global.RigorousGenerator.registerTemplate('civics_rule_of_law', civics_rule_of_law);
-  global.RigorousGenerator.registerTemplate('civics_public_participation', civics_public_participation);
-  global.RigorousGenerator.registerTemplate('civics_media_literacy', civics_media_literacy);
-  global.RigorousGenerator.registerTemplate('civics_social_issues', civics_social_issues);
-
-})(typeof window !== 'undefined' ? window : global);
+    init();
+})(window);
