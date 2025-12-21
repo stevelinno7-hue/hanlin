@@ -4,251 +4,378 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>診斷分析 - 翰林雲端學院</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
 
     <style>
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f8fafc; color: #334155; }
-        
-        /* 側邊欄統一：淺藍色風格 */
-        .nav-item-active { 
-            background-color: #eff6ff !important; /* bg-blue-50 */
-            color: #2563eb !important;            /* text-blue-600 */
-            font-weight: 700;
-        }
-        .nav-item-inactive { color: #64748b; }
-        .nav-item-inactive:hover { background-color: #f8fafc; color: #1e293b; }
-
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f8fafc; }
+        .sidebar-glass { background: rgba(255, 255, 255, 0.98); border-right: 1px solid #e2e8f0; }
         .fade-in { animation: fadeIn 0.5s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .no-scrollbar::-webkit-scrollbar { display: none; }
+        /* 自定義捲軸 */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background-color: #94a3b8; }
     </style>
-    
+
     <script src="mockdata/users.js"></script>
     <script src="assets/js/auth.js"></script>
 </head>
 <body class="h-screen flex overflow-hidden">
-<aside class="w-64 bg-white border-r border-slate-100 hidden lg:flex flex-col z-20 shrink-0 h-screen sticky top-0">
-    <div class="h-16 flex items-center px-6 border-b border-slate-50">
-        <div class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm mr-2 shadow-sm">翰</div>
-        <span class="text-lg font-bold text-slate-800 tracking-tight">雲端學院</span>
-    </div>
-    <div class="px-4 py-6">
-        <div class="bg-white border border-slate-50 rounded-2xl p-6 text-center shadow-sm">
-            <div class="w-16 h-16 mx-auto bg-blue-50 rounded-full flex items-center justify-center text-2xl text-blue-500 mb-3 border-2 border-white shadow-sm">
-                <i class="fas fa-user-graduate"></i>
+
+    <aside class="w-72 sidebar-glass hidden lg:flex flex-col z-20 shadow-sm">
+        <div class="h-16 flex items-center px-6 border-b border-gray-100">
+            <div class="w-8 h-8 bg-blue-600 rounded text-white flex items-center justify-center font-bold text-lg mr-3 shadow-md shadow-blue-200">翰</div>
+            <span class="text-xl font-bold text-slate-800 tracking-wide">雲端學院</span>
+        </div>
+        
+        <div class="p-6">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 text-center">
+                <div class="w-16 h-16 mx-auto bg-blue-50 rounded-full flex items-center justify-center text-2xl text-blue-600 mb-3 border-4 border-white shadow-sm">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <h3 class="font-bold text-gray-800 text-lg" id="sideUserName">--</h3>
+                <div class="text-xs text-gray-500 mt-1" id="sideUserRole">--</div>
             </div>
-            <h3 class="font-bold text-slate-800 text-base" id="sideUserName">--</h3>
-            <div class="text-[11px] text-slate-400 mt-1 mb-3 font-medium uppercase tracking-wider" id="sideUserRole">--</div>
-            <button onclick="openProfileModal()" class="text-[10px] font-bold text-slate-400 border border-slate-200 px-3 py-1.5 rounded-full hover:bg-slate-50 hover:text-slate-600 transition-all">
-                <i class="fas fa-pen mr-1"></i> 編輯年級
+        </div>
+
+        <nav class="flex-grow px-4 space-y-1 overflow-y-auto">
+            <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition group">
+                <i class="fas fa-th-large w-5 group-hover:scale-110 transition"></i> 課程總覽
+            </a>
+            <a href="remedial.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition group">
+                <i class="fas fa-book-medical w-5 group-hover:scale-110 transition"></i> 錯題補救
+            </a>
+            <a href="analysis.html" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-50 text-blue-700 font-bold shadow-sm ring-1 ring-blue-100">
+                <i class="fas fa-chart-pie w-5"></i> 學習分析
+            </a>
+            <a href="forum.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition group">
+                <i class="fas fa-comments w-5 group-hover:scale-110 transition"></i> 解題論壇
+            </a>
+        </nav>
+
+        <div class="p-4 border-t border-gray-100">
+            <button onclick="Auth.logout()" class="w-full flex items-center justify-center gap-2 text-gray-500 hover:text-red-600 hover:bg-red-50 py-2.5 rounded-lg transition font-medium">
+                <i class="fas fa-sign-out-alt"></i> 登出系統
             </button>
         </div>
-    </div>
-    <nav id="mainNav" class="flex-grow px-3 space-y-1 overflow-y-auto no-scrollbar">
-        <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all text-sm font-medium">
-            <i class="fas fa-th-large w-5 text-center"></i> 課程總覽
-        </a>
-        <a href="remedial.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all text-sm font-medium">
-            <i class="fas fa-book-medical w-5 text-center"></i> 錯題補救
-        </a>
-        <a href="analysis.html" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-50 text-blue-600 font-bold shadow-sm transition-all text-sm">
-            <i class="fas fa-chart-pie w-5 text-center text-blue-600"></i> 學習分析
-        </a>
-        <a href="forum.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all text-sm font-medium">
-            <i class="fas fa-comments w-5 text-center"></i> 解題論壇
-        </a>
-    </nav>
-    <div class="p-4 border-t border-slate-50">
-        <button onclick="Auth.logout()" class="w-full flex items-center justify-center gap-2 text-slate-400 hover:text-red-500 py-3 transition-colors font-bold text-xs">
-            <i class="fas fa-sign-out-alt"></i> 登出系統
-        </button>
-    </div>
-</aside>
-    <main class="flex-grow flex flex-col h-full bg-[#fcfdfe] overflow-hidden">
-        <header class="h-16 bg-white border-b border-slate-100 flex items-center justify-between px-8 shrink-0 z-10">
-            <div class="flex items-center gap-3">
-                <h2 class="text-lg font-bold text-slate-800">測驗結果診斷</h2>
-                <span class="text-slate-200">|</span>
-                <p class="text-[10px] text-slate-400 font-bold tracking-widest uppercase" id="examMetaInfo">Analysis Report</p>
-            </div>
-            <a href="dashboard.html" class="text-slate-400 hover:text-blue-600 text-sm font-bold transition flex items-center gap-2">
-                <i class="fas fa-arrow-left text-xs"></i> 返回首頁
-            </a>
-        </header>
+    </aside>
 
-        <div class="flex-grow overflow-y-auto p-8 no-scrollbar" id="reportContent">
-            <div class="max-w-5xl mx-auto space-y-8">
+    <main class="flex-grow flex flex-col h-full relative overflow-hidden">
+        
+        <div class="bg-white/80 backdrop-blur-md border-b border-gray-200 p-4 md:p-6 z-10 sticky top-0 flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-3">
+                    <span class="w-2 h-8 bg-blue-600 rounded-full"></span>
+                    測驗結果診斷
+                </h1>
+                <p class="text-sm text-gray-500 mt-1 pl-5" id="examMetaInfo">正在載入數據...</p>
+            </div>
+            <a href="dashboard.html" class="hidden md:flex items-center gap-2 text-gray-500 hover:text-blue-600 font-bold transition px-4 py-2 rounded-lg hover:bg-gray-50">
+                <i class="fas fa-arrow-left"></i> 返回首頁
+            </a>
+        </div>
+
+        <div class="flex-grow overflow-y-auto p-4 md:p-8 scroll-smooth" id="reportContent">
+            <div class="max-w-6xl mx-auto space-y-8 pb-10">
+                
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 fade-in">
-                    <div class="bg-white rounded-[2rem] shadow-sm border border-slate-50 p-8 flex flex-col items-center justify-center relative overflow-hidden">
-                        <div class="absolute top-0 left-0 w-full h-1.5 bg-blue-500" id="scoreBar"></div>
-                        <h3 class="text-slate-400 font-bold text-[10px] uppercase tracking-widest mb-4">Exam Score</h3>
-                        <div class="text-7xl font-black text-slate-800 mb-6 tracking-tighter" id="scoreDisplay">--</div>
-                        <div class="grid grid-cols-2 gap-3 w-full">
-                            <div class="bg-emerald-50 rounded-2xl p-3 text-center">
-                                <div class="text-[8px] text-emerald-500 font-bold uppercase">Correct</div>
-                                <div class="text-lg font-bold text-emerald-600" id="correctCount">--</div>
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 flex flex-col items-center justify-center relative overflow-hidden group hover:shadow-md transition">
+                        <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
+                        <h3 class="text-gray-500 font-bold mb-2 tracking-wide text-sm uppercase">本次測驗得分</h3>
+                        <div class="text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-blue-600 to-indigo-600 mb-6 scale-100 group-hover:scale-110 transition duration-500" id="scoreDisplay">--</div>
+                        
+                        <div class="flex gap-4 w-full">
+                            <div class="flex-1 bg-green-50 rounded-xl p-3 text-center border border-green-100">
+                                <div class="text-xs text-green-600 font-bold mb-1">答對</div>
+                                <div class="text-2xl font-bold text-green-700" id="correctCount">--</div>
                             </div>
-                            <div class="bg-slate-50 rounded-2xl p-3 text-center">
-                                <div class="text-[8px] text-slate-400 font-bold uppercase">Total</div>
-                                <div class="text-lg font-bold text-slate-600" id="totalCount">--</div>
+                            <div class="flex-1 bg-gray-50 rounded-xl p-3 text-center border border-gray-100">
+                                <div class="text-xs text-gray-500 font-bold mb-1">總題數</div>
+                                <div class="text-2xl font-bold text-gray-700" id="totalCount">--</div>
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="bg-white rounded-[2rem] shadow-sm border border-slate-50 p-8 lg:col-span-2">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
-                                <i class="fas fa-chart-radar text-blue-500"></i> 五大能力指標分析
-                            </h3>
+
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 lg:col-span-2 relative hover:shadow-md transition">
+                        <h3 class="font-bold text-gray-800 mb-6 flex items-center gap-2 border-b pb-3">
+                            <i class="fas fa-chart-radar text-blue-500"></i> 五大能力指標分析
+                        </h3>
+                        <div class="w-full h-64 flex justify-center">
+                            <canvas id="radarChart"></canvas>
                         </div>
-                        <div class="w-full h-56"><canvas id="radarChart"></canvas></div>
                     </div>
                 </div>
 
-                <div id="wrongList" class="space-y-6 pb-20"></div>
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 fade-in" style="animation-delay: 0.1s;">
+                    <h3 class="font-bold text-gray-800 mb-6 flex items-center gap-2 border-b pb-3">
+                        <i class="fas fa-user-shield text-red-500"></i> 考試行為診斷
+                    </h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="p-5 rounded-xl border bg-gray-50" id="timeCheatBox">
+                            <div class="flex items-center gap-3 mb-2">
+                                <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm text-gray-600"><i class="fas fa-stopwatch"></i></div>
+                                <h4 class="font-bold text-gray-700">作答節奏分析</h4>
+                            </div>
+                            <p class="text-sm text-gray-600 pl-11" id="timeCheatText">分析中...</p>
+                        </div>
+                        
+                        <div class="p-5 rounded-xl border bg-gray-50" id="tabCheatBox">
+                            <div class="flex items-center gap-3 mb-2">
+                                <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm text-gray-600"><i class="fas fa-window-restore"></i></div>
+                                <h4 class="font-bold text-gray-700">專注度分析 (切換分頁)</h4>
+                            </div>
+                            <p class="text-sm text-gray-600 pl-11" id="tabCheatText">分析中...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="fade-in" style="animation-delay: 0.2s;">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                            <i class="fas fa-exclamation-circle text-orange-500"></i> 錯題深度解析
+                        </h2>
+                    </div>
+                    <div id="wrongList" class="space-y-6">
+                        </div>
+                </div>
+
             </div>
         </div>
 
         <div id="noDataMessage" class="hidden flex-grow flex flex-col items-center justify-center text-center p-10 bg-white">
-            <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-3xl text-slate-200 mb-6">
-                <i class="fas fa-clipboard-question"></i>
+            <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center text-4xl text-gray-400 mb-6 animate-bounce">
+                <i class="fas fa-clipboard-list"></i>
             </div>
-            <h2 class="text-xl font-bold text-slate-800 mb-2">尚無測驗數據</h2>
-            <p class="text-slate-400 text-xs mb-8">完成測驗後，系統將生成深度診斷報告</p>
-            <a href="dashboard.html" class="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-100 text-sm">前往測驗</a>
+            <h2 class="text-2xl font-bold text-gray-700 mb-2">尚無測驗數據</h2>
+            <p class="text-gray-500 mb-8">您還沒有完成任何測驗，快去挑戰一下吧！</p>
+            <a href="dashboard.html" class="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 shadow-lg hover:shadow-blue-500/30 transition transform hover:-translate-y-1">
+                前往測驗中心
+            </a>
         </div>
     </main>
+
     <script>
-        // 初始化與數據處理邏輯
+        // 1. 初始化使用者資訊
         const user = Auth.getCurrentUser();
         if (user) {
             document.getElementById('sideUserName').textContent = user.name;
-            document.getElementById('sideUserRole').textContent = user.grade || "九年級學生";
+            document.getElementById('sideUserRole').textContent = user.grade || "學生";
         }
 
+        // 2. 讀取考試結果
         const resultStr = localStorage.getItem('examResult');
+        
         if (!resultStr) {
+            // 沒有資料的狀態
             document.getElementById('reportContent').classList.add('hidden');
             document.getElementById('noDataMessage').classList.remove('hidden');
+            document.getElementById('examMetaInfo').textContent = "無資料";
         } else {
+            // 有資料，開始渲染
             const result = JSON.parse(resultStr);
-            const scoreEl = document.getElementById('scoreDisplay');
-            const scoreBar = document.getElementById('scoreBar');
-            scoreEl.textContent = result.score;
-
-            // 高風險作弊處理
-            const isCheatHigh = result.cheat?.cheatLevel === 'HIGH' || result.tabCheat?.level === 'HIGH';
-            if (isCheatHigh) {
-                scoreEl.classList.add('text-red-600', 'score-critical');
-                scoreBar.classList.replace('bg-blue-600', 'bg-red-500');
-                document.getElementById('examMetaInfo').innerHTML = `<span class="text-red-600 font-bold"><i class="fas fa-triangle-exclamation mr-1"></i> 誠信警示：成績待複查</span>`;
-            } else {
-                document.getElementById('examMetaInfo').textContent = `${result.subject || '綜合測驗'} | ${new Date().toLocaleDateString()}`;
-            }
-
+            
+            // 更新上方數據
+            document.getElementById('scoreDisplay').textContent = result.score;
             document.getElementById('correctCount').textContent = result.correctCount;
             document.getElementById('totalCount').textContent = result.totalCount;
+            document.getElementById('examMetaInfo').textContent = `${result.subject || '綜合測驗'} | 測驗時間：${result.date || new Date().toLocaleDateString()}`;
 
-            // 雷達圖繪製
-            function getAbilityData(res) {
-                // 此處模擬基於錯題概念的能力計算
-                return [85, 72, 90, 65, 80]; // 順序：觀念、邏輯、運算、分析、應用
-            }
+            // 繪製雷達圖
+            renderRadarChart(result.score);
 
-            new Chart(document.getElementById('radarChart').getContext('2d'), {
-                type: 'radar',
-                data: {
-                    labels: ["觀念理解", "邏輯推演", "運算能力", "圖表分析", "素養應用"],
-                    datasets: [{
-                        data: getAbilityData(result),
-                        backgroundColor: 'rgba(37, 99, 235, 0.15)',
-                        borderColor: '#2563eb',
-                        borderWidth: 2,
-                        pointBackgroundColor: '#2563eb',
-                        pointRadius: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        r: { min: 0, max: 100, ticks: { display: false }, grid: { color: '#f1f5f9' }, angleLines: { color: '#f1f5f9' } }
-                    },
-                    plugins: { legend: { display: false } }
-                }
-            });
-
+            // 執行作弊行為診斷
             applyCheatResult(result);
+
+            // 渲染錯題列表
             renderWrongList(result.wrongList);
         }
 
+        // ----------------------------------------------------
+        // 輔助函式：繪製雷達圖
+        // ----------------------------------------------------
+        function renderRadarChart(baseScore) {
+            const ctx = document.getElementById('radarChart').getContext('2d');
+            
+            // 模擬五力分析數據 (基於總分微調)
+            const randomOffset = () => Math.floor(Math.random() * 20) - 10;
+            const labels = ["觀念理解", "邏輯推演", "運算能力", "圖表分析", "素養應用"];
+            const data = labels.map(() => Math.min(100, Math.max(40, baseScore + randomOffset())));
+
+            new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '本次能力表現',
+                        data: data,
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)', // blue-500
+                        borderColor: '#2563eb', // blue-600
+                        pointBackgroundColor: '#2563eb',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: '#2563eb'
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { color: '#e2e8f0' },
+                            grid: { color: '#e2e8f0' },
+                            pointLabels: {
+                                font: { size: 12, family: "'Noto Sans TC', sans-serif", weight: 'bold' },
+                                color: '#475569'
+                            },
+                            ticks: { display: false, stepSize: 20 },
+                            min: 0,
+                            max: 100
+                        }
+                    },
+                    plugins: { legend: { display: false } } 
+                }
+            });
+        }
+
+        // ----------------------------------------------------
+        // 輔助函式：作弊行為診斷
+        // ----------------------------------------------------
         function applyCheatResult(result) {
             const timeBox = document.getElementById('timeCheatBox');
             const timeText = document.getElementById('timeCheatText');
             const tabBox = document.getElementById('tabCheatBox');
-            const tabText = document.getElementById('tabText');
+            const tabText = document.getElementById('tabCheatText');
 
-            // 時間診斷樣式映射
-            const config = {
-                NORMAL: { cls: 'border-emerald-100 bg-emerald-50 text-emerald-700', icon: 'check-circle', msg: '作答節奏穩健，符合常態範圍' },
-                MEDIUM: { cls: 'border-amber-100 bg-amber-50 text-amber-700', icon: 'circle-exclamation', msg: '部分題目思考時間較短，請保持細心' },
-                HIGH: { cls: 'border-red-100 bg-red-50 text-red-700', icon: 'triangle-exclamation', msg: '偵測到多題秒答，建議重新檢視作答過程' }
+            // 預設值處理
+            const cheatData = result.cheat || { cheatLevel: 'NORMAL', fastCount: 0 };
+            const tabData = result.tabCheat || { level: 'NORMAL', totalSwitch: 0 };
+
+            // 1. 秒數異常判斷
+            const timeStyles = {
+                NORMAL: ['border-green-200', 'bg-green-50', 'text-green-700', '<i class="fas fa-check-circle"></i> 作答節奏正常'],
+                MEDIUM: ['border-yellow-200', 'bg-yellow-50', 'text-yellow-700', '<i class="fas fa-exclamation-triangle"></i> 部分題目作答過快'],
+                HIGH: ['border-red-200', 'bg-red-50', 'text-red-700', '<i class="fas fa-radiation"></i> 極速作答 (秒猜)']
             };
+            const timeStyle = timeStyles[cheatData.cheatLevel] || timeStyles.NORMAL;
+            
+            timeBox.className = `p-5 rounded-xl border ${timeStyle[0]} ${timeStyle[1]}`;
+            timeText.className = `text-sm font-bold ${timeStyle[2]} mt-1 pl-11`;
+            timeText.innerHTML = `${timeStyle[3]} <span class="text-xs opacity-75 font-normal ml-2">(過快題數：${cheatData.fastCount})</span>`;
 
-            const tCfg = config[result.cheat?.cheatLevel || 'NORMAL'];
-            timeBox.className = `p-6 rounded-2xl border ${tCfg.cls}`;
-            timeCheatText.innerHTML = `<span class="font-bold block mb-1">${tCfg.msg}</span><span class="opacity-70">異常秒數題數：${result.cheat?.fastCount || 0} 題</span>`;
+            // 2. 分頁切換判斷
+            const tabStyles = {
+                NORMAL: ['border-green-200', 'bg-green-50', 'text-green-700', '<i class="fas fa-check-circle"></i> 專注度良好'],
+                MEDIUM: ['border-yellow-200', 'bg-yellow-50', 'text-yellow-700', '<i class="fas fa-eye-slash"></i> 有切換分頁紀錄'],
+                HIGH: ['border-red-200', 'bg-red-50', 'text-red-700', '<i class="fas fa-window-restore"></i> 頻繁離開測驗頁面']
+            };
+            const tabStyle = tabStyles[tabData.level] || tabStyles.NORMAL;
 
-            const tabCfg = config[result.tabCheat?.level || 'NORMAL'];
-            tabCheatBox.className = `p-6 rounded-2xl border ${tabCfg.cls}`;
-            tabCheatText.innerHTML = `<span class="font-bold block mb-1">${tabCfg.msg.replace('作答', '切換')}</span><span class="opacity-70">分頁切換紀錄：${result.tabCheat?.totalSwitch || 0} 次</span>`;
+            tabBox.className = `p-5 rounded-xl border ${tabStyle[0]} ${tabStyle[1]}`;
+            tabText.className = `text-sm font-bold ${tabStyle[2]} mt-1 pl-11`;
+            tabText.innerHTML = `${tabStyle[3]} <span class="text-xs opacity-75 font-normal ml-2">(切換次數：${tabData.totalSwitch})</span>`;
         }
 
-        function renderWrongList(list) {
-            const container = document.getElementById('wrongList');
-            if (list.length === 0) {
-                container.innerHTML = `<div class="bg-emerald-50 border border-emerald-100 p-10 rounded-3xl text-center"><i class="fas fa-crown text-amber-400 text-4xl mb-4"></i><h3 class="text-emerald-800 font-bold text-xl">全對！表現堪稱完美</h3></div>`;
+        // ----------------------------------------------------
+        // 輔助函式：渲染錯題列表
+        // ----------------------------------------------------
+        function renderWrongList(wrongList) {
+            const listContainer = document.getElementById('wrongList');
+            
+            if (!wrongList || wrongList.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="bg-green-50 border border-green-200 rounded-xl p-10 text-center shadow-sm">
+                        <div class="w-20 h-20 bg-white text-green-500 rounded-full flex items-center justify-center text-4xl mx-auto mb-6 shadow-sm">
+                            <i class="fas fa-crown"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-green-800 mb-2">太棒了！本次測驗全對！</h3>
+                        <p class="text-green-600">您的觀念非常清晰，這是一次完美的表現。</p>
+                    </div>`;
                 return;
             }
 
-            list.forEach((q, i) => {
-                container.innerHTML += `
-                    <div class="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm hover:border-blue-200 transition-colors">
-                        <div class="p-8">
-                            <div class="flex items-center gap-3 mb-6">
-                                <span class="bg-red-50 text-red-500 text-[10px] font-black px-3 py-1 rounded-full border border-red-100 uppercase tracking-widest">Error ${i+1}</span>
-                                <span class="bg-slate-100 text-slate-400 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">${q.concept || '核心概念'}</span>
+            // 遍歷錯題並生成 HTML
+            wrongList.forEach((q, idx) => {
+                const explainText = q.explanation ? q.explanation.join('<br>') : "暫無詳細解析";
+                
+                // 選項 HTML 生成
+                let optionsHtml = '';
+                q.options.forEach((opt, optIdx) => {
+                    let baseClass = "p-4 rounded-lg border flex items-center gap-4 transition mb-2";
+                    let styleClass = "bg-white border-gray-200 text-gray-600"; 
+                    let iconHtml = `<div class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center font-bold text-sm shrink-0">${String.fromCharCode(65+optIdx)}</div>`;
+                    let statusHtml = "";
+
+                    // 正確答案 (綠色)
+                    if (optIdx === q.answer) {
+                        styleClass = "bg-green-50 border-green-300 text-green-800 ring-1 ring-green-200";
+                        iconHtml = `<div class="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-sm"><i class="fas fa-check"></i></div>`;
+                        statusHtml = `<div class="ml-auto text-green-600 text-sm font-bold flex items-center bg-white px-2 py-1 rounded-md shadow-sm border border-green-100"><i class="fas fa-check-circle mr-1"></i> 正解</div>`;
+                    } 
+                    // 使用者選錯的 (紅色)
+                    else if (optIdx === q.yourAns) {
+                        styleClass = "bg-red-50 border-red-300 text-red-800 ring-1 ring-red-200";
+                        iconHtml = `<div class="w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-sm"><i class="fas fa-times"></i></div>`;
+                        statusHtml = `<div class="ml-auto text-red-500 text-sm font-bold flex items-center bg-white px-2 py-1 rounded-md shadow-sm border border-red-100"><i class="fas fa-times-circle mr-1"></i> 誤答</div>`;
+                    }
+
+                    optionsHtml += `
+                        <div class="${baseClass} ${styleClass}">
+                            ${iconHtml}
+                            <div class="flex-grow font-medium leading-relaxed">${opt}</div>
+                            ${statusHtml}
+                        </div>
+                    `;
+                });
+
+                // 錯題卡片本體
+                const cardHtml = `
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden group hover:shadow-md transition">
+                        <div class="p-6 md:p-8 border-b border-gray-100">
+                            <div class="flex items-center gap-3 mb-5">
+                                <span class="bg-red-50 text-red-600 text-xs font-bold px-3 py-1 rounded-full border border-red-100 flex items-center">
+                                    <i class="fas fa-times mr-1"></i> 第 ${idx+1} 題
+                                </span>
+                                <span class="bg-gray-100 text-gray-600 text-xs font-bold px-3 py-1 rounded-full border border-gray-200">
+                                    ${q.concept || '綜合題型'}
+                                </span>
                             </div>
-                            <h3 class="text-xl font-bold text-slate-800 mb-8 leading-relaxed">${q.question}</h3>
-                            <div class="space-y-3">
-                                ${q.options.map((opt, idx) => {
-                                    const isCorrect = idx === q.answer;
-                                    const isWrong = idx === q.yourAns;
-                                    const style = isCorrect ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : (isWrong ? 'bg-red-50 border-red-200 text-red-700' : 'bg-slate-50 border-slate-100 text-slate-500 opacity-60');
-                                    const icon = isCorrect ? 'fa-check-circle' : (isWrong ? 'fa-times-circle' : 'fa-circle');
-                                    return `<div class="flex items-center p-4 rounded-2xl border ${style} transition-all">
-                                        <i class="fas ${icon} mr-4 text-lg"></i>
-                                        <span class="font-bold">${opt}</span>
-                                        ${isCorrect ? '<span class="ml-auto text-[10px] font-black uppercase">Correct</span>' : ''}
-                                        ${isWrong ? '<span class="ml-auto text-[10px] font-black uppercase">Your Choice</span>' : ''}
-                                    </div>`;
-                                }).join('')}
+                            <h3 class="text-xl font-bold text-gray-800 leading-relaxed mb-8">
+                                ${q.question.replace(/\n/g, '<br>')}
+                            </h3>
+                            <div class="space-y-1">
+                                ${optionsHtml}
                             </div>
                         </div>
-                        <div class="bg-blue-50/50 p-8 border-t border-blue-50">
-                            <div class="flex gap-4">
-                                <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center shrink-0"><i class="fas fa-lightbulb"></i></div>
-                                <div>
-                                    <h4 class="font-black text-blue-800 text-xs uppercase tracking-widest mb-2">Detailed Analysis</h4>
-                                    <p class="text-slate-600 text-sm leading-loose">${q.explanation ? q.explanation.join('') : '分析載入中...'}</p>
+
+                        <div class="bg-indigo-50/50 p-6 md:p-8">
+                            <div class="flex items-start gap-4">
+                                <div class="mt-1 w-10 h-10 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center flex-shrink-0 text-lg shadow-sm border border-indigo-200">
+                                    <i class="fas fa-lightbulb"></i>
+                                </div>
+                                <div class="flex-grow">
+                                    <h4 class="font-bold text-indigo-800 text-base mb-2">解析重點</h4>
+                                    <div class="text-sm text-indigo-900 leading-relaxed bg-white/60 p-4 rounded-xl border border-indigo-100">
+                                        ${explainText}
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>`;
+                    </div>
+                `;
+                
+                listContainer.insertAdjacentHTML('beforeend', cardHtml);
+                
+                // 重新渲染 MathJax (如果有數學公式)
+                if (window.MathJax) {
+                    MathJax.typesetPromise([listContainer.lastElementChild]).then(() => {});
+                }
             });
         }
     </script>
