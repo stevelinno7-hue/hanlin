@@ -1,17 +1,15 @@
-(function(global){
-    'use strict';
+(function(global) {
+  'use strict';
 
-    // 定義一個啟動函式
-    function init() {
-        const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
-        
-        // 檢查：如果引擎還沒好，就等 100 毫秒後再試一次
-        if (!G || !G.registerTemplate) {
-            setTimeout(init, 100);
-            return;
-        }
+  function init() {
+    // 1. 偵測引擎是否載入
+    const G = global.RigorousGenerator;
+    if (!G || !G.registerTemplate) {
+      setTimeout(init, 100);
+      return;
+    }
 
-        const { pick, shuffle } = G.utils;
+    const { randInt, shuffle, generateNumericOptions } = G.utils;
 
     // 2. 重新定義題庫資料庫 (優化邏輯與年級分類)
     const mathDB = [
