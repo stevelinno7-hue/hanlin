@@ -70,7 +70,20 @@
             };
         }
     };
+    // ... 原有代碼 ...
+        const prefixMap = { 
+            'math': 'math', 'physics': 'phy', 'chemistry': 'chm', 'biology': 'bio', 
+            'english': 'eng', 'chinese': 'chi', 'history': 'his', 'geography': 'geo', 
+            'civics': 'civ', 'earth': 'ear', 'earth_science': 'ear' 
+        };
+        const subjectKey = prefixMap[subject] || subject;
 
+        // 【新增：動態擴展科目匹配】
+        // 確保像 his_source 這樣的 ID 也能被 history 選中
+        let pool = allTemplates.filter(t => {
+            const idLow = t.id.toLowerCase();
+            const idMatch = idLow.includes(subjectKey);
+// ... 其餘邏輯保持不變 ...
     // 宣告 Ready 狀態，讓 HTML 的 startExamSafely 可以執行
     global.PaperGeneratorV2 = PaperGeneratorV2;
     global.PAPER_GENERATOR_READY = true;
