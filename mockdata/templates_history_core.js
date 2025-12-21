@@ -1,22 +1,12 @@
 (function (global) {
+  'use strict';
   function init() {
-    const G = global.RigorousGenerator || global?.global?.RigorousGenerator;
-    if (!G || !G.registerTemplate) return setTimeout(init, 100);
-
+    const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
+    if (!G || !G.registerTemplate) { setTimeout(init, 100); return; }
     const { pick, shuffle } = G.utils;
-    const gradeOrder = ["國七","國八","國九","高一"];
 
-    function allow(item, ctx) {
-      const g = ctx.tags.find(t => gradeOrder.includes(t));
-      if (!g) return false;
-      return g.startsWith("國")
-        ? item.t[0] === g
-        : gradeOrder.indexOf(item.t[0]) <= gradeOrder.indexOf(g);
-    }
-
-    // === 歷史題庫（你的）===
     const db = [
-     // ----------------------------------------------------
+      // ----------------------------------------------------
         // [歷史 - 台灣史] (Prehistory ~ Modern)
         // ----------------------------------------------------
         { s:"歷史", t:["國七","台灣史"], e:"長濱文化", y:"舊石器時代", p:"早期人類", k:"八仙洞", d:"台灣已知最早的史前文化，以敲打石器為主，已知用火" },
@@ -95,26 +85,26 @@
 
     ];
 
-    G.registerTemplate("history_basic", ctx => {
-      const pool = db.filter(x => allow(x, ctx));
-      if (!pool.length) return null;
-
+    G.registerTemplate('history_core', (ctx) => {
+      // 安全篩選：檢查 ctx 是否指定年級
+      let pool = db;
+      if (ctx && ctx.tags) {
+        const targetGrade = ctx.tags.find(t => t.includes("國") || t.includes("高"));
+        if (targetGrade) pool = db.filter(item => item.t[0] === targetGrade);
+      }
+      
+      if (pool.length === 0) pool = db; 
       const item = pick(pool);
-      const opts = shuffle([
-        item.y,
-        ...shuffle(pool.filter(x => x !== item)).slice(0,3).map(x => x.y)
-      ]);
+      const wrong = shuffle(db.filter(x => x.a !== item.a)).slice(0, 3).map(x => x.a);
+      const opts = shuffle([item.a, ...wrong]);
 
       return {
-        question: `【歷史】下列何者最符合「${item.e}」？`,
+        question: `【歷史｜${item.t[1]}】關於「${item.e}」，下列敘述何者正確？`,
         options: opts,
-        answer: opts.indexOf(item.y),
-        explanation: [`${item.e}：${item.d}`]
+        answer: opts.indexOf(item.a),
+        concept: item.e
       };
-    }, ["歷史","國七","國八","國九","高一"]);
-
-    console.log("✅ 歷史題庫載入完成");
+    }, ["history", "歷史", "社會"]);
   }
-
   init();
-})(window);
+})(this);
