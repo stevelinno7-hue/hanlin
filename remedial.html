@@ -11,10 +11,25 @@
 
     <style>
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #f8fafc; color: #334155; }
-        .nav-item-active { background-color: #eff6ff; color: #2563eb; font-weight: 700; }
-        .nav-item-active i { color: #2563eb; }
+        
+        /* 側邊欄：當前活動項目的顏色 (符合截圖) */
+        .nav-item-active { 
+            background-color: #2563eb !important; 
+            color: white !important; 
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+        
+        /* 側邊欄：一般項目的顏色 */
+        .nav-item-inactive {
+            color: #64748b;
+        }
+        .nav-item-inactive:hover {
+            background-color: #f1f5f9;
+            color: #1e293b;
+        }
+
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .card-shadow { box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.06); }
+        .card-shadow { box-shadow: 0 1px 3px rgba(0,0,0,0.02), 0 4px 12px rgba(0,0,0,0.03); }
     </style>
     
     <script src="mockdata/users.js"></script>
@@ -22,63 +37,65 @@
 </head>
 <body class="h-screen flex overflow-hidden">
 
-    <aside class="w-72 sidebar-glass border-r border-gray-200 hidden lg:flex flex-col z-20">
-        <div class="h-16 flex items-center px-6 border-b border-gray-100">
-            <div class="w-8 h-8 bg-blue-600 rounded text-white flex items-center justify-center font-bold text-lg mr-3 shadow-lg">翰</div>
+    <aside class="w-72 bg-white border-r border-slate-200 hidden lg:flex flex-col z-20">
+        <div class="h-16 flex items-center px-6 border-b border-slate-50">
+            <div class="w-8 h-8 bg-blue-600 rounded text-white flex items-center justify-center font-bold text-lg mr-3 shadow-md">翰</div>
             <span class="text-xl font-bold text-slate-800 tracking-wide">雲端學院</span>
         </div>
 
         <div class="p-6">
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-center">
-                <div class="w-16 h-16 mx-auto bg-blue-50 rounded-full flex items-center justify-center text-2xl text-blue-600 mb-3 border-2 border-white shadow-sm">
+            <div class="bg-slate-50 p-5 rounded-2xl border border-slate-100 text-center">
+                <div class="w-16 h-16 mx-auto bg-white rounded-full flex items-center justify-center text-2xl text-blue-600 mb-3 border border-slate-100 shadow-sm">
                     <i class="fas fa-user-graduate"></i>
                 </div>
-                <h3 class="font-bold text-gray-800 text-lg" id="sideUserName">--</h3>
-                <div class="text-xs text-gray-500 mb-3" id="sideUserRole">--</div>
-                <button onclick="openProfileModal()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1 rounded-full transition">
-                    <i class="fas fa-pen mr-1"></i> 編輯年級
+                <h3 class="font-bold text-slate-800 text-lg" id="sideUserName">--</h3>
+                <div class="text-xs text-slate-400 mt-1 mb-4" id="sideUserRole">--</div>
+                <button onclick="openProfileModal()" class="text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 px-4 py-1.5 rounded-full transition">
+                    <i class="fas fa-sync-alt mr-1"></i> 切換年級
                 </button>
             </div>
         </div>
 
-        <nav class="flex-grow px-4 space-y-1 overflow-y-auto no-scrollbar">
-            <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 text-blue-700 font-bold">
-                <i class="fas fa-th-large w-5"></i> 課程總覽
+        <nav class="flex-grow px-4 space-y-1.5">
+            <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl nav-item-inactive transition">
+                <i class="fas fa-th-large w-5 text-center"></i> 課程總覽
             </a>
-            <a href="remedial.html" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-50 hover:bg-gray-50 hover:text-gray-900 transition">
-                <i class="fas fa-book-medical w-5"></i> 錯題補救
+            <a href="remedial.html" class="flex items-center gap-3 px-4 py-3 rounded-xl nav-item-active">
+                <i class="fas fa-book-medical w-5 text-center"></i> 錯題補救
             </a>
-            <a href="analysis.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition">
-                <i class="fas fa-chart-pie w-5"></i> 學習分析
+            <a href="analysis.html" class="flex items-center gap-3 px-4 py-3 rounded-xl nav-item-inactive transition">
+                <i class="fas fa-chart-pie w-5 text-center"></i> 學習分析
             </a>
-            <a href="forum.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition">
-                <i class="fas fa-comments w-5"></i> 解題論壇
+            <a href="forum.html" class="flex items-center gap-3 px-4 py-3 rounded-xl nav-item-inactive transition">
+                <i class="fas fa-comments w-5 text-center"></i> 解題論壇
             </a>
         </nav>
 
-        <div class="p-4 border-t border-gray-200">
-            <button onclick="Auth.logout()" class="w-full flex items-center justify-center gap-2 text-gray-500 hover:text-red-500 py-2 transition">
+        <div class="p-6 border-t border-slate-100">
+            <button onclick="Auth.logout()" class="w-full flex items-center justify-center gap-2 text-slate-400 hover:text-red-500 py-2 transition font-medium text-sm">
                 <i class="fas fa-sign-out-alt"></i> 登出系統
             </button>
         </div>
     </aside>
 
-    <main class="flex-grow flex flex-col h-full bg-[#fcfdfe]">
-        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 z-10">
+    <main class="flex-grow flex flex-col h-full overflow-hidden">
+        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shrink-0">
             <div class="flex items-center gap-3">
-                <h2 class="text-lg font-bold text-gray-800">錯題補救庫</h2>
-                <span class="text-slate-300">|</span>
-                <p class="text-xs text-slate-400 font-medium">整理自歷次評量之錯題</p>
+                <h2 class="text-lg font-black text-slate-800 uppercase tracking-tight">錯題補救庫</h2>
+                <span class="text-slate-200">|</span>
+                <p class="text-xs text-slate-400 font-medium">ERROR REVIEW BANK</p>
             </div>
-            <div class="bg-red-50 text-red-600 px-3 py-1.5 rounded-full text-xs font-black border border-red-100">
-                累積錯題：<span id="totalWrong">0</span>
+            <div class="flex items-center gap-4">
+                <div class="bg-red-50 text-red-500 px-4 py-1.5 rounded-full text-xs font-black border border-red-100 flex items-center shadow-sm shadow-red-50">
+                    <span class="w-2 h-2 bg-red-500 rounded-full mr-2 animate-pulse"></span>
+                    累積錯題：<span id="totalWrong" class="ml-1">0</span>
+                </div>
             </div>
         </header>
 
-        <div class="flex-grow overflow-y-auto p-8 no-scrollbar">
-            <div class="max-w-4xl mx-auto space-y-6" id="wrongContainer">
-                <div class="text-center py-20 text-gray-400 font-bold">載入中...</div>
-            </div>
+        <div class="flex-grow overflow-y-auto p-8 no-scrollbar bg-[#f8fafc]">
+            <div class="max-w-4xl mx-auto space-y-6 pb-20" id="wrongContainer">
+                </div>
         </div>
     </main>
 
@@ -86,7 +103,6 @@
         const currentUser = Auth.requireLogin();
         if (currentUser) {
             document.getElementById('sideUserName').textContent = currentUser.name || currentUser.username;
-            // 抓取錯題資料
             const storageKey = `history_${currentUser.username}`;
             const history = JSON.parse(localStorage.getItem(storageKey) || "[]");
             let allWrong = [];
@@ -101,39 +117,41 @@
 
             if (allWrong.length === 0) {
                 container.innerHTML = `
-                    <div class="flex flex-col items-center justify-center py-32 text-slate-400">
-                        <i class="fas fa-clipboard-check text-6xl mb-4 opacity-20"></i>
-                        <p class="font-bold text-lg">目前沒有錯題紀錄</p>
+                    <div class="flex flex-col items-center justify-center py-32 text-slate-300">
+                        <i class="fas fa-file-circle-check text-7xl mb-6 opacity-30"></i>
+                        <p class="font-bold text-xl">目前沒有錯題紀錄</p>
+                        <p class="text-sm mt-2">太棒了！繼續保持優異表現</p>
                     </div>`;
             } else {
                 container.innerHTML = '';
                 allWrong.reverse().forEach((q, i) => {
                     const explain = q.explanation ? (Array.isArray(q.explanation) ? q.explanation.join('') : q.explanation) : "無解析";
                     container.innerHTML += `
-                        <div class="bg-white p-8 rounded-2xl card-shadow border border-slate-100 hover:border-blue-200 transition group">
-                            <div class="flex justify-between text-[10px] text-slate-400 mb-4 font-black uppercase tracking-widest">
-                                <span class="bg-slate-100 px-2 py-0.5 rounded text-slate-500">${q.concept || '綜合主題'}</span>
-                                <span>${q.date.split(' ')[0]}</span>
+                        <div class="bg-white p-8 rounded-3xl card-shadow border border-slate-100 hover:border-blue-200 transition-all duration-300 group">
+                            <div class="flex justify-between items-center mb-6">
+                                <span class="bg-slate-100 text-slate-500 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">${q.concept || '綜合練習'}</span>
+                                <span class="text-slate-300 text-xs font-medium"><i class="far fa-calendar-alt mr-1"></i> ${q.date.split(' ')[0]}</span>
                             </div>
-                            <h3 class="font-bold text-slate-800 text-xl mb-8 leading-relaxed">${q.question}</h3>
+                            <h3 class="font-bold text-slate-800 text-xl mb-10 leading-relaxed">${q.question}</h3>
                             
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                                <div class="flex flex-col gap-1 bg-red-50/50 p-4 rounded-xl border border-red-100">
-                                    <span class="text-[10px] font-black text-red-400 uppercase">Your Answer</span>
-                                    <span class="text-red-600 font-bold">${q.options[q.yourAns] || '未作答'}</span>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+                                <div class="flex flex-col gap-2 bg-red-50/40 p-5 rounded-2xl border border-red-100/50">
+                                    <span class="text-[10px] font-black text-red-400 uppercase tracking-tighter">Your Answer</span>
+                                    <span class="text-red-600 font-bold text-lg">${q.options[q.yourAns] || '未作答'}</span>
                                 </div>
-                                <div class="flex flex-col gap-1 bg-emerald-50/50 p-4 rounded-xl border border-emerald-100">
-                                    <span class="text-[10px] font-black text-emerald-400 uppercase">Correct Answer</span>
-                                    <span class="text-emerald-600 font-bold">${q.options[q.answer]}</span>
+                                <div class="flex flex-col gap-2 bg-emerald-50/40 p-5 rounded-2xl border border-emerald-100/50">
+                                    <span class="text-[10px] font-black text-emerald-400 uppercase tracking-tighter">Correct Answer</span>
+                                    <span class="text-emerald-600 font-bold text-lg">${q.options[q.answer]}</span>
                                 </div>
                             </div>
 
-                            <div class="bg-slate-50 rounded-xl p-5 border border-slate-100">
-                                <button onclick="this.nextElementSibling.classList.toggle('hidden')" class="w-full flex items-center justify-between text-slate-400 font-black text-[10px] uppercase tracking-widest hover:text-blue-600 transition">
-                                    <span><i class="fas fa-lightbulb text-amber-400 mr-2"></i> 題目詳細解析</span>
-                                    <i class="fas fa-chevron-down"></i>
+                            <div class="bg-slate-50/80 rounded-2xl p-6 border border-slate-100">
+                                <button onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('i').classList.toggle('rotate-180')" 
+                                        class="w-full flex items-center justify-between text-slate-500 font-bold text-sm transition">
+                                    <span class="flex items-center"><i class="fas fa-lightbulb text-amber-400 mr-2 text-lg"></i> 題目詳細解析</span>
+                                    <i class="fas fa-chevron-down transition-transform"></i>
                                 </button>
-                                <div class="hidden mt-4 text-sm text-slate-600 leading-loose border-t border-slate-200 pt-4">
+                                <div class="hidden mt-6 text-slate-600 leading-loose text-base border-t border-slate-200/60 pt-6">
                                     ${explain}
                                 </div>
                             </div>
