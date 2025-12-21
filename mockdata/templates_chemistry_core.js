@@ -1,18 +1,12 @@
 (function (global) {
   'use strict';
-
   function init() {
-    const G = global.RigorousGenerator || global?.global?.RigorousGenerator;
-    if (!G || !G.registerTemplate) return setTimeout(init, 100);
-
+    const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
+    if (!G || !G.registerTemplate) { setTimeout(init, 100); return; }
     const { pick, shuffle } = G.utils;
 
-    /* === 你的 elementDB === */
-    const elementDB = [{ g:"國八", s:"H",  n:"氫" }, { g:"國八", s:"O",  n:"氧" }, { g:"國八", s:"N",  n:"氮" }, { g:"國八", s:"C",  n:"碳" }, { g:"國八", s:"Na", n:"鈉" }, { g:"國八", s:"Cl", n:"氯" }, { g:"國八", s:"Ca", n:"鈣" }, { g:"國八", s:"Fe", n:"鐵" }, { g:"國八", s:"Cu", n:"銅" }, { g:"國八", s:"Al", n:"鋁" }];
-
-    /* === 你的 chemConceptDB === */
-    const chemConceptDB = [
-// ==========================================
+    const db = [
+       // ==========================================
         // 4. 化學 (Chemistry)
         // ==========================================
         // [國八] 物質與反應
@@ -63,54 +57,17 @@
         { s:"化學", t:["高二","酸鹼"], q: "緩衝溶液", a: "能抵抗pH值劇烈變化的溶液" }
     ];
 
-
-
-
-
-    function gradeMatch(itemGrade, targetGrade) {
-      if (targetGrade === "國八") return itemGrade === "國八";
-      if (targetGrade === "國九") return itemGrade === "國九";
-      if (targetGrade === "高中") return ["國八","國九","高一","高二","高三"].includes(itemGrade);
-      return false;
-    }
-
-    function makeConceptQ(grade) {
-      const pool = chemConceptDB.filter(x => gradeMatch(x.t[0], grade));
-      if (pool.length < 4) return null;
-
-      const item = pick(pool);
-      const wrong = shuffle(pool.filter(x => x !== item)).slice(0,3).map(x => x.a);
-      const opts = shuffle([item.a, ...wrong]);
-
+    G.registerTemplate('chemistry_core', (ctx) => {
+      const pool = (ctx && ctx.tags) ? db.filter(item => ctx.tags.includes(item.t[0])) : db;
+      const base = pick(pool);
+      const wrong = shuffle(db.filter(x => x.a !== base.a)).slice(0, 3).map(x => x.a);
+      const opts = shuffle([base.a, ...wrong]);
       return {
-        question: `【化學｜${grade}】${item.q}`,
-        options: opts,
-        answer: opts.indexOf(item.a),
-        explanation: [`正確答案：${item.a}`]
+        question: `【化學｜${base.t[1]}】${base.q}？`,
+        options: opts, answer: opts.indexOf(base.a),
+        concept: base.t[1]
       };
-    }
-
-    function makeElementQ() {
-      const el = pick(elementDB);
-      const wrong = shuffle(elementDB.filter(x => x !== el)).slice(0,3).map(x => x.n);
-      const opts = shuffle([el.n, ...wrong]);
-
-      return {
-        question: `【化學】符號「${el.s}」代表什麼？`,
-        options: opts,
-        answer: opts.indexOf(el.n),
-        explanation: [`${el.s} 是 ${el.n}`]
-      };
-    }
-
-    G.registerTemplate("chem_g8", () => makeConceptQ("國八"), ["化學","國八"]);
-    G.registerTemplate("chem_g9", () => makeConceptQ("國九"), ["化學","國九"]);
-    G.registerTemplate("chem_h",  () => makeConceptQ("高中"), ["化學","高中"]);
-    G.registerTemplate("chem_el", makeElementQ, ["化學","元素"]);
-
-    console.log("✅ 化學題庫載入完成");
+    }, ["chemistry", "化學", "自然"]);
   }
-
   init();
-})(window);
-
+})(this);
