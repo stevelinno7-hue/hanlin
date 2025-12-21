@@ -27,44 +27,43 @@
     <script src="assets/js/auth.js"></script>
 </head>
 <body class="h-screen flex overflow-hidden">
-
-    <aside class="w-72 sidebar-glass hidden lg:flex flex-col z-20 shadow-sm">
-        <div class="h-16 flex items-center px-6 border-b border-gray-100">
-            <div class="w-8 h-8 bg-blue-600 rounded text-white flex items-center justify-center font-bold text-lg mr-3 shadow-md shadow-blue-200">翰</div>
-            <span class="text-xl font-bold text-slate-800 tracking-wide">雲端學院</span>
-        </div>
-        
-        <div class="p-6">
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 text-center">
-                <div class="w-16 h-16 mx-auto bg-blue-50 rounded-full flex items-center justify-center text-2xl text-blue-600 mb-3 border-4 border-white shadow-sm">
-                    <i class="fas fa-user-graduate"></i>
-                </div>
-                <h3 class="font-bold text-gray-800 text-lg" id="sideUserName">--</h3>
-                <div class="text-xs text-gray-500 mt-1" id="sideUserRole">--</div>
+<aside class="w-64 bg-white border-r border-slate-100 hidden lg:flex flex-col z-20 shrink-0 h-screen sticky top-0">
+    <div class="h-16 flex items-center px-6 border-b border-slate-50">
+        <div class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm mr-2 shadow-sm">翰</div>
+        <span class="text-lg font-bold text-slate-800 tracking-tight">雲端學院</span>
+    </div>
+    <div class="px-4 py-6">
+        <div class="bg-white border border-slate-50 rounded-2xl p-6 text-center shadow-sm">
+            <div class="w-16 h-16 mx-auto bg-blue-50 rounded-full flex items-center justify-center text-2xl text-blue-500 mb-3 border-2 border-white shadow-sm">
+                <i class="fas fa-user-graduate"></i>
             </div>
-        </div>
-
-        <nav class="flex-grow px-4 space-y-1 overflow-y-auto">
-            <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition group">
-                <i class="fas fa-th-large w-5 group-hover:scale-110 transition"></i> 課程總覽
-            </a>
-            <a href="remedial.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition group">
-                <i class="fas fa-book-medical w-5 group-hover:scale-110 transition"></i> 錯題補救
-            </a>
-            <a href="analysis.html" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-50 text-blue-700 font-bold shadow-sm ring-1 ring-blue-100">
-                <i class="fas fa-chart-pie w-5"></i> 學習分析
-            </a>
-            <a href="forum.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition group">
-                <i class="fas fa-comments w-5 group-hover:scale-110 transition"></i> 解題論壇
-            </a>
-        </nav>
-
-        <div class="p-4 border-t border-gray-100">
-            <button onclick="Auth.logout()" class="w-full flex items-center justify-center gap-2 text-gray-500 hover:text-red-600 hover:bg-red-50 py-2.5 rounded-lg transition font-medium">
-                <i class="fas fa-sign-out-alt"></i> 登出系統
+            <h3 class="font-bold text-slate-800 text-base" id="sideUserName">--</h3>
+            <div class="text-[11px] text-slate-400 mt-1 mb-3 font-medium uppercase tracking-wider" id="sideUserRole">--</div>
+            <button onclick="openProfileModal()" class="text-[10px] font-bold text-slate-400 border border-slate-200 px-3 py-1.5 rounded-full hover:bg-slate-50 hover:text-slate-600 transition-all">
+                <i class="fas fa-pen mr-1"></i> 編輯年級
             </button>
         </div>
-    </aside>
+    </div>
+    <nav id="mainNav" class="flex-grow px-3 space-y-1 overflow-y-auto no-scrollbar">
+        <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all text-sm font-medium">
+            <i class="fas fa-th-large w-5 text-center text-blue-600"></i> 課程總覽
+        </a>
+        <a href="remedial.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all text-sm font-medium">
+            <i class="fas fa-book-medical w-5 text-center"></i> 錯題補救
+        </a>
+        <a href="analysis.html" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-50 text-blue-600 font-bold shadow-sm transition-all text-sm">
+            <i class="fas fa-chart-pie w-5 text-center"></i> 學習分析
+        </a>
+        <a href="forum.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all text-sm font-medium">
+            <i class="fas fa-comments w-5 text-center"></i> 解題論壇
+        </a>
+    </nav>
+    <div class="p-4 border-t border-slate-50">
+        <button onclick="Auth.logout()" class="w-full flex items-center justify-center gap-2 text-slate-400 hover:text-red-500 py-3 transition-colors font-bold text-xs">
+            <i class="fas fa-sign-out-alt"></i> 登出系統
+        </button>
+    </div>
+</aside>
 
     <main class="flex-grow flex flex-col h-full relative overflow-hidden">
         
