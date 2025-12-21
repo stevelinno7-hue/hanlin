@@ -146,7 +146,26 @@
             document.getElementById('examMetaInfo').textContent = "無資料";
         } else {
             const result = JSON.parse(resultStr);
-            document.getElementById('scoreDisplay').textContent = result.score;
+            const scoreEl = document.getElementById('scoreDisplay');
+            scoreEl.textContent = result.score;
+            
+            // 作弊 HIGH → 成績標紅 + 註記
+            const isCheatHigh =
+                result.cheat?.cheatLevel === 'HIGH' ||
+                result.tabCheat?.level === 'HIGH';
+            
+            if (isCheatHigh) {
+                scoreEl.classList.remove(
+                    'from-blue-600', 'to-indigo-600'
+                );
+                scoreEl.classList.add(
+                    'from-red-600', 'to-red-500'
+                );
+            
+                document.getElementById('examMetaInfo').innerHTML +=
+                    ' <span class="ml-2 text-red-600 font-bold">⚠ 成績需複查</span>';
+            }
+
             document.getElementById('correctCount').textContent = result.correctCount;
             document.getElementById('totalCount').textContent = result.totalCount;
             document.getElementById('examMetaInfo').textContent = `${result.subject || '綜合測驗'} | 測驗時間：${new Date().toLocaleDateString()}`;
@@ -154,9 +173,44 @@
             // 1. 繪製雷達圖
             const baseScore = result.score;
             // 隨機產生一些波動，讓圖表看起來比較真實
-            const randomOffset = () => Math.floor(Math.random() * 20) - 10;
+            function calcAbilityScores(result) {
+            const abilities = {
+                memory: { total: 0, correct: 0 },
+                understand: { total: 0, correct: 0 },
+                calculate: { total: 0, correct: 0 },
+                analyze: { total: 0, correct: 0 },
+                apply: { total: 0, correct: 0 }
+            };
+        
+            result.wrongList.forEach(q => {
+                const c = q.concept || '';
+                if (c.includes('記憶')) abilities.memory.total++;
+                else if (c.includes('觀念')) abilities.understand.total++;
+                else if (c.includes('運算')) abilities.calculate.total++;
+                else if (c.includes('分析')) abilities.analyze.total++;
+                else abilities.apply.total++;
+            });
+        
+            const totalQ = result.totalCount;
+            const correctQ = result.correctCount;
+        
+            // 簡化：用錯題比例反推能力
+            Object.values(abilities).forEach(a => {
+                a.correct = Math.max(0, totalQ - a.total);
+            });
+        
+            return [
+                Math.round((abilities.understand.correct / totalQ) * 100),
+                Math.round((abilities.analyze.correct / totalQ) * 100),
+                Math.round((abilities.calculate.correct / totalQ) * 100),
+                Math.round((abilities.memory.correct / totalQ) * 100),
+                Math.round((abilities.apply.correct / totalQ) * 100)
+            ];
+        }
+
             const labels = ["觀念理解", "邏輯推演", "運算能力", "圖表分析", "素養應用"];
-            const data = labels.map(() => Math.min(100, Math.max(40, baseScore + randomOffset())));
+            const data = calcAbilityScores(result);
+
 
             new Chart(document.getElementById('radarChart').getContext('2d'), {
                 type: 'radar',
