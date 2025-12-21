@@ -4,10 +4,10 @@ window.addEventListener('load', function() {
 
     const G = window.RigorousGenerator || (window.global && window.global.RigorousGenerator);
     
-    // 等待工廠就緒
     if (!G || !G.autoFissionRegister) {
         setTimeout(() => {
-             if (G && G.autoFissionRegister) startBootstrap(G);
+             const G2 = window.RigorousGenerator || (window.global && window.global.RigorousGenerator);
+             if (G2 && G2.autoFissionRegister) startBootstrap(G2);
              else console.warn("⚠️ [Bootstrap] 工廠未就緒，將使用原始模式。");
         }, 500);
     } else {
@@ -17,7 +17,6 @@ window.addEventListener('load', function() {
     function startBootstrap(G) {
         if (!G._rawRegister) G._rawRegister = G.registerTemplate;
         
-        // 攔截註冊函數，改用工廠的裂變註冊
         G.registerTemplate = function(name, func, tags = []) {
             try {
                 G.autoFissionRegister(name, func, tags, G._rawRegister);
@@ -28,4 +27,4 @@ window.addEventListener('load', function() {
         };
         console.log("🚀 [Bootstrap] 裂變攔截器啟動成功！");
     }
-});」
+});
