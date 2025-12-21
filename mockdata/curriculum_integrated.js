@@ -89,8 +89,6 @@
   // 自然科
   junior.push(createBook('junior_high', '7', 'biology', '生物', 'bio', 1, '細胞與生命現象'));
   junior.push(createBook('junior_high', '7', 'biology', '生物', 'bio', 2, '植物與生態基礎'));
-  junior.push(createBook('junior_high', '9', 'biology', '生物', 'bio', 6, '會考生物總複習'));
-
   junior.push(createBook('junior_high', '8', 'physics', '物理', 'phy', 3, '波動與聲音、光學'));
   junior.push(createBook('junior_high', '8', 'physics', '物理', 'phy', 4, '熱學、力與運動'));
   junior.push(createBook('junior_high', '9', 'physics', '物理', 'phy', 5, '直線運動、力與運動'));
