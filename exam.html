@@ -212,11 +212,13 @@ function prepareExam() {
 
     const urlParams = new URLSearchParams(location.search);
     const courseId = urlParams.get('id');
+
     let subject = urlParams.get('subject') || 'math';
-    const count = parseInt(urlParams.get('count')) || 10;
+    const count = Number(urlParams.get('count')) || 10;
 
     if (subject === 'social') subject = 'history';
 
+    // ===== 解析年級 =====
     let targetCourse = null;
     let courseTags = [];
 
@@ -227,12 +229,37 @@ function prepareExam() {
         }
     }
 
-    courseTags = targetCourse?.tags || [subject, '國七', '核心'];
-
-    console.log("🎯 目標:", targetCourse?.name || subject, courseTags);
+    courseTags = targetCourse?.tags || [subject, '國七'];
 
     const grade =
         courseTags.find(t => /國七|國八|國九|高一|高二|高三/.test(t)) || '國七';
+
+    console.log("🎯 出題條件", { subject, grade, count });
+
+    // ===== 🔥 正確 API + 題數硬限制 =====
+    const paper = PaperGenerator.generate({
+        subject,
+        grade,
+        count
+    });
+
+    if (!Array.isArray(paper)) {
+        alert("❌ 題庫回傳格式錯誤");
+        console.error("PaperGenerator 回傳：", paper);
+        return;
+    }
+
+    if (paper.length !== count) {
+        alert(`❌ 題庫不足：需要 ${count} 題，只找到 ${paper.length} 題`);
+        console.warn("題庫不足", paper);
+        return;
+    }
+
+    // ===== 初始化狀態 =====
+    mockQuestions = paper;
+    currentQIndex = 0;
+    userAnswers = new Array(paper.length).fill(null);
+    timeLog = new Array(paper.length).fill(0);
 
     examInfo = {
         subject: subject.toUpperCase(),
@@ -242,30 +269,19 @@ function prepareExam() {
 
     timeLeft = examInfo.timeLimit;
 
-    // ===== 出題（保證 Generator 已 ready）=====
-    mockQuestions = PaperGenerator.generatePaper({
-        subject,
-        grade,
-        count
-    });
-
-    if (!Array.isArray(mockQuestions) || mockQuestions.length === 0) {
-        alert("⚠️ 題庫數量不足，請調整條件");
-        return;
-    }
-
-    userAnswers = new Array(mockQuestions.length).fill(null);
-    timeLog = new Array(mockQuestions.length).fill(0);
-
+    // ===== 更新 UI =====
     els.title.textContent = examInfo.title;
     els.sub.textContent = examInfo.subject;
-    els.totalNum.textContent = mockQuestions.length;
+    els.totalNum.textContent = paper.length;
 
     renderPalette();
     renderQuestion();
     startTimer();
     updateNav();
+
+    console.log(`✅ 測驗初始化完成（${paper.length}/${count} 題）`);
 }
+
 
 // ==========================================
 // 3️⃣ 題目渲染（以下基本保持你原邏輯）
