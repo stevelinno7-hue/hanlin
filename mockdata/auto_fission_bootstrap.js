@@ -1,40 +1,34 @@
-// ✅ 關鍵修正：加上 load 監聽器，確保它是最後一個執行的
 window.addEventListener('load', function() {
     'use strict';
+    console.log("⏳ [Bootstrap] 頁面載入完成，開始檢查依賴...");
 
-    console.log("⏳ [Bootstrap] 等待頁面載入完成，準備啟動...");
-
-    // 1. 取得引擎實例
     const G = window.RigorousGenerator || (window.global && window.global.RigorousGenerator);
     
-    if (!G) {
-        console.error("❌ [Bootstrap] 嚴重錯誤：Generator Engine 未載入！無法裂變。");
-        return;
+    // 如果找不到，再給最後一次機會 (延遲 500ms)
+    if (!G || !G.autoFissionRegister) {
+        console.warn("⚠️ [Bootstrap] 尚未偵測到工廠，嘗試最後等待...");
+        setTimeout(() => {
+            if (G && G.autoFissionRegister) {
+                console.log("✅ [Bootstrap] 延遲後成功連接工廠！");
+                startBootstrap(G);
+            } else {
+                console.error("❌ [Bootstrap] 放棄：AutoTemplateFissionFactory 真的未載入。");
+            }
+        }, 500);
+    } else {
+        startBootstrap(G);
     }
 
-    // 2. 檢查工廠是否存在
-    if (!G.autoFissionRegister) {
-        console.error("❌ [Bootstrap] 嚴重錯誤：AutoTemplateFissionFactory 未載入！無法裂變。");
-        return;
+    function startBootstrap(G) {
+        if (!G._rawRegister) G._rawRegister = G.registerTemplate;
+        
+        G.registerTemplate = function(name, func, tags = []) {
+            try {
+                G.autoFissionRegister(name, func, tags, G._rawRegister);
+            } catch (e) {
+                G._rawRegister.call(G, name, func, tags);
+            }
+        };
+        console.log("🚀 [Bootstrap] 攔截器啟動成功！");
     }
-
-    // 3. 備份原始註冊函數 (Raw Register)
-    if (!G._rawRegister) {
-        G._rawRegister = G.registerTemplate;
-    }
-
-    // 4. 覆寫註冊函數 (攔截器)
-    G.registerTemplate = function(name, func, tags = []) {
-        try {
-            // 呼叫工廠進行裂變
-            G.autoFissionRegister(name, func, tags, G._rawRegister);
-        } catch (e) {
-            console.error(`⚠️ [Bootstrap] 題目 ${name} 裂變失敗:`, e);
-            // 失敗時回退到原始註冊
-            G._rawRegister.call(G, name, func, tags);
-        }
-    };
-
-    console.log("🚀 [Bootstrap] 自動裂變攔截器已成功啟動！");
-
 });
