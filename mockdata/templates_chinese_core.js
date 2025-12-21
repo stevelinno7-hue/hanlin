@@ -224,6 +224,13 @@
 
         console.log("✅ 國文題庫【完全鎖年級】版本已註冊至 Factory");
     }
+// 🔥 明確告訴 Factory：這是國文模板
+if (window.AutoTemplateFissionFactory) {
+    window.AutoTemplateFissionFactory.registerCategory(
+        "chinese",
+        ["國文", "chinese"]
+    );
+}
 
     init();
 })();
