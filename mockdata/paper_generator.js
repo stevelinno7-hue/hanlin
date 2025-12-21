@@ -104,24 +104,41 @@
     /* ================================
      * 4️⃣ 出題
      * ================================ */
+    /* ================================
+ * 4️⃣ 出題（修正版：不重複）
+ * ================================ */
     const result = [];
+    const usedKeys = new Set();
     let guard = 0;
-
-    while (result.length < total && guard++ < 200) {
+    
+    while (result.length < total && guard++ < 500) {
       const tmpl = pool[Math.floor(Math.random() * pool.length)];
+      let q;
+    
       try {
-        const q = tmpl.func({}, Math.random);
-        result.push({ ...q, templateId: tmpl.id });
+        q = tmpl.func({}, Math.random);
       } catch (e) {
         console.warn("⚠️ 題目生成失敗", tmpl.id);
+        continue;
       }
+    
+      // 🔑 唯一鍵（模板 + 題幹 + 正解）
+      const key = `${tmpl.id}::${q.question}::${q.answer}`;
+    
+      if (usedKeys.has(key)) continue;
+    
+      usedKeys.add(key);
+      result.push({ ...q, templateId: tmpl.id });
     }
-
+    
+    if (result.length < total) {
+      console.warn(`⚠️ 題庫不足，只產生 ${result.length}/${total} 題`);
+    }
+    
     return G.utils.shuffle(result).map((q, i) => ({
       ...q,
       id: i + 1
     }));
-  };
 
   /* ================================
    * fallback
