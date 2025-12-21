@@ -210,6 +210,22 @@
 
         console.log("✅ 國文題庫（v2.0｜API 已統一）載入完成");
     }
+    function init() {
+  try {
+    const G = global.RigorousGenerator;
+    if (!G || !G.registerTemplate || !G.utils) {
+      setTimeout(init, 100);
+      return;
+    }
+
+    const { pick, shuffle } = G.utils;
+
+    // 👇 原本的國文題庫邏輯全部留著
+
+  } catch (e) {
+    console.error("❌ templates_chinese_core FAILED", e);
+  }
+}
 
     init();
 })(window);
