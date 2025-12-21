@@ -1,68 +1,80 @@
 (function (global) {
-    'use strict';
+  'use strict';
 
-    const log  = (...a) => console.log("📄 [PaperGen]", ...a);
-    const err  = (...a) => console.error("❌ [PaperGen]", ...a);
+  const PaperGenerator = {
+    ready: false,
 
-    // ==========================================
-    // 核心出題函式：改為同步檢索 (假設 Generator 已就緒)
-    // ==========================================
-    function generatePaper(params) {
-        const {
-            subject,
-            count = 10,
-            tags = [] // 接收來自 exam.html 的課程標籤
-        } = params || {};
+    init() {
+      const G = global.RigorousGenerator;
+      if (!G || !G.registerTemplate || !G.utils) {
+        setTimeout(() => this.init(), 50);
+        return;
+      }
 
-        const G = global.RigorousGenerator;
-        if (!G || !G.templates) {
-            err("Generator 尚未就緒，請檢查 Script 載入順序");
-            return [];
-        }
+      this.G = G;
+      this.ready = true;
 
-        log("開始生成考卷", { subject, tags, count });
+      console.log("📄 [PaperGen] 🔥 PAPER GEN VERSION 2025-01-SAFE（NO DUP STEM / NO FALLBACK）已載入");
 
-        // 過濾邏輯：優先找符合 tags 的模板，若無則找符合 subject 的
-        let availableTemplates = Object.keys(G.templates).filter(name => {
-            // 如果有傳入標籤 (如 '國八', '多項式')，則進行關鍵字比對
-            if (tags.length > 0) {
-                return tags.some(tag => name.includes(tag));
-            }
-            return name.toLowerCase().includes(subject.toLowerCase());
-        });
+      // 通知外部「我已就緒」
+      window.dispatchEvent(new Event("PaperGeneratorReady"));
+      console.log("🚦 PaperGeneratorReady dispatched");
+    },
 
-        // 備用機制：若標籤過濾不到，拿該科目的所有題目
-        if (availableTemplates.length === 0) {
-            availableTemplates = Object.keys(G.templates);
-        }
+    /**
+     * 產生整份試卷
+     * @param {Object} cfg
+     * @param {String} cfg.subject
+     * @param {String} cfg.grade
+     * @param {Number} cfg.count
+     * @param {Array} cfg.tags
+     */
+    generate(cfg) {
+      if (!this.ready) {
+        throw new Error("[PaperGen] Generator 尚未就緒");
+      }
 
-        let result = [];
-        const usedStems = new Set();
-        let attempts = 0;
-        const MAX_ATTEMPTS = count * 30;
+      const { subject, grade, count } = cfg;
 
-        while (result.length < count && attempts < MAX_ATTEMPTS) {
-            attempts++;
-            const tplName = availableTemplates[Math.floor(Math.random() * availableTemplates.length)];
-            
-            try {
-                const q = G.generateFromTemplate(tplName);
-                if (!q || usedStems.has(q.question)) continue;
+      // ① 找出所有可用模板
+      const templates = this.G.getTemplates({
+        subject,
+        grade
+      });
 
-                usedStems.add(q.question);
-                result.push({
-                    id: result.length + 1,
-                    ...q
-                });
-            } catch (e) { continue; }
-        }
+      if (!templates || templates.length === 0) {
+        throw new Error("題庫回傳空陣列");
+      }
 
-        log(`成功生成 ${result.length} 題`);
-        return result;
+      const questions = [];
+      const usedStems = new Set();
+      let guard = 0;
+
+      // ② 安全抽題（不重複題幹）
+      while (questions.length < count && guard++ < count * 10) {
+        const tpl = this.G.utils.pick(templates);
+        const q = tpl();
+
+        if (!q || !q.question) continue;
+        if (usedStems.has(q.question)) continue;
+
+        usedStems.add(q.question);
+        questions.push(q);
+      }
+
+      if (questions.length === 0) {
+        throw new Error("生成題目失敗：所有模板皆回傳 null");
+      }
+
+      console.log(`✅ [PaperGen] 成功產生 ${questions.length} 題`);
+      return questions;
     }
+  };
 
-    global.PaperGenerator = { generatePaper };
-    global.paperGenerator = global.PaperGenerator;
-    global.PAPER_GENERATOR_READY = true;
-    window.dispatchEvent(new Event("PaperGeneratorReady"));
+  // 掛到全域
+  global.PaperGenerator = PaperGenerator;
+
+  // 啟動
+  PaperGenerator.init();
+
 })(window);
