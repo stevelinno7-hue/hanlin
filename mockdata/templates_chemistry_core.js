@@ -1,36 +1,22 @@
 (function (global) {
-    'use strict';
+  'use strict';
 
-    function init() {
-        const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
-        if (!G || !G.registerTemplate) {
-            setTimeout(init, 100);
-            return;
-        }
+  function init() {
+    const G = global.RigorousGenerator || global?.global?.RigorousGenerator;
+    if (!G || !G.registerTemplate) return setTimeout(init, 100);
 
-        const { pick, shuffle } = G.utils;
+    const { pick, shuffle } = G.utils;
 
-        // ==========================================
-        // 元素資料庫（國八）
-        // ==========================================
-        const elementDB = [
-            { g:"國八", s:"H",  n:"氫" },
-            { g:"國八", s:"O",  n:"氧" },
-            { g:"國八", s:"N",  n:"氮" },
-            { g:"國八", s:"C",  n:"碳" },
-            { g:"國八", s:"Na", n:"鈉" },
-            { g:"國八", s:"Cl", n:"氯" },
-            { g:"國八", s:"Ca", n:"鈣" },
-            { g:"國八", s:"Fe", n:"鐵" },
-            { g:"國八", s:"Cu", n:"銅" },
-            { g:"國八", s:"Al", n:"鋁" }
-        ];
+    /* === 你的 elementDB === */
+    const elementDB = [{ g:"國八", s:"H",  n:"氫" }, { g:"國八", s:"O",  n:"氧" }, { g:"國八", s:"N",  n:"氮" }, { g:"國八", s:"C",  n:"碳" }, { g:"國八", s:"Na", n:"鈉" }, { g:"國八", s:"Cl", n:"氯" }, { g:"國八", s:"Ca", n:"鈣" }, { g:"國八", s:"Fe", n:"鐵" }, { g:"國八", s:"Cu", n:"銅" }, { g:"國八", s:"Al", n:"鋁" }];
 
+    /* === 你的 chemConceptDB === */
+    const chemConceptDB = [
+// ==========================================
+        // 4. 化學 (Chemistry)
         // ==========================================
-        // 化學概念題庫（完整）
-        // ==========================================
-        const chemConceptDB = [
-            { s:"化學", t:["國八","物質"], q: "空氣中含量最多的氣體", a: "氮氣" },
+        // [國八] 物質與反應
+        { s:"化學", t:["國八","物質"], q: "空氣中含量最多的氣體", a: "氮氣" },
         { s:"化學", t:["國八","物質"], q: "惰性氣體 (鈍氣)", a: "氦、氖、氬" },
         { s:"化學", t:["國八","物質"], q: "純物質", a: "有固定的組成與性質" },
         { s:"化學", t:["國八","物質"], q: "混合物", a: "無固定的熔點與沸點" },
@@ -75,80 +61,56 @@
         { s:"化學", t:["高二","反應"], q: "反應速率影響因素", a: "本性、濃度、溫度、催化劑、表面積" },
         { s:"化學", t:["高二","平衡"], q: "勒沙特列原理", a: "平衡移動以抵銷外加因素" },
         { s:"化學", t:["高二","酸鹼"], q: "緩衝溶液", a: "能抵抗pH值劇烈變化的溶液" }
-        ];
+    ];
 
-        // ==========================================
-        // 年級可用題庫規則
-        // ==========================================
-        function gradeMatch(itemGrade, targetGrade) {
-            if (targetGrade === "國八") return itemGrade === "國八";
-            if (targetGrade === "國九") return itemGrade === "國九";
-            if (targetGrade === "高中") return ["國八","國九","高一","高二","高三"].includes(itemGrade);
-            return false;
-        }
 
-        function conceptPool(targetGrade) {
-            return chemConceptDB.filter(x => gradeMatch(x.t[0], targetGrade));
-        }
 
-        // ==========================================
-        // 元素符號題（只有國八內容）
-        // ==========================================
-        function makeElementQ() {
-            const data = elementDB;
-            const el = pick(data);
-            const wrong = shuffle(data.filter(x => x.n !== el.n)).slice(0, 3).map(x => x.n);
-            const opts = shuffle([el.n, ...wrong]);
 
-            return {
-                question: `【化學】符號「${el.s}」代表什麼？`,
-                options: opts,
-                answer: opts.indexOf(el.n),
-                concept: "元素符號",
-                explanation: [`${el.s} 代表 ${el.n}`]
-            };
-        }
 
-        // ==========================================
-        // 概念題
-        // ==========================================
-        function makeConceptQ(targetGrade) {
-            const pool = conceptPool(targetGrade);
-            if (pool.length < 4) return null;
-
-            const item = pick(pool);
-            const wrong = shuffle(pool.filter(x => x.a !== item.a))
-                .slice(0, 3)
-                .map(x => x.a);
-
-            const opts = shuffle([item.a, ...wrong]);
-
-            return {
-                question: `【化學｜${targetGrade}】${item.q}`,
-                options: opts,
-                answer: opts.indexOf(item.a),
-                concept: item.t[1],
-                explanation: [`正確答案：${item.a}`]
-            };
-        }
-
-        // ==========================================
-        // 註冊模板
-        // ==========================================
-        G.registerTemplate("chem_concept_g8", () => makeConceptQ("國八"),
-            ["chemistry","化學","國八"]);
-
-        G.registerTemplate("chem_concept_g9", () => makeConceptQ("國九"),
-            ["chemistry","化學","國九"]);
-
-        G.registerTemplate("chem_concept_h", () => makeConceptQ("高中"),
-            ["chemistry","化學","高中"]);
-
-        G.registerTemplate("chem_element_h", () => makeElementQ(),
-            ["chemistry","化學","高中"]);
-
-        console.log("✅ 化學題庫已載入（高中可出國中內容）");
+    function gradeMatch(itemGrade, targetGrade) {
+      if (targetGrade === "國八") return itemGrade === "國八";
+      if (targetGrade === "國九") return itemGrade === "國九";
+      if (targetGrade === "高中") return ["國八","國九","高一","高二","高三"].includes(itemGrade);
+      return false;
     }
 
-    init();
+    function makeConceptQ(grade) {
+      const pool = chemConceptDB.filter(x => gradeMatch(x.t[0], grade));
+      if (pool.length < 4) return null;
+
+      const item = pick(pool);
+      const wrong = shuffle(pool.filter(x => x !== item)).slice(0,3).map(x => x.a);
+      const opts = shuffle([item.a, ...wrong]);
+
+      return {
+        question: `【化學｜${grade}】${item.q}`,
+        options: opts,
+        answer: opts.indexOf(item.a),
+        explanation: [`正確答案：${item.a}`]
+      };
+    }
+
+    function makeElementQ() {
+      const el = pick(elementDB);
+      const wrong = shuffle(elementDB.filter(x => x !== el)).slice(0,3).map(x => x.n);
+      const opts = shuffle([el.n, ...wrong]);
+
+      return {
+        question: `【化學】符號「${el.s}」代表什麼？`,
+        options: opts,
+        answer: opts.indexOf(el.n),
+        explanation: [`${el.s} 是 ${el.n}`]
+      };
+    }
+
+    G.registerTemplate("chem_g8", () => makeConceptQ("國八"), ["化學","國八"]);
+    G.registerTemplate("chem_g9", () => makeConceptQ("國九"), ["化學","國九"]);
+    G.registerTemplate("chem_h",  () => makeConceptQ("高中"), ["化學","高中"]);
+    G.registerTemplate("chem_el", makeElementQ, ["化學","元素"]);
+
+    console.log("✅ 化學題庫載入完成");
+  }
+
+  init();
 })(window);
+
