@@ -11,9 +11,10 @@
     console.log("🛠️ [PaperGen] 載入中... 目前已註冊樣板數:", Object.keys(G._templates).length);
 
     // 2. 定義科目映射表 (HTML 傳來的 subject -> 題目裡的 tags)
+    // 這張表能解決「選社會卻抓不到歷史」的問題
     const SUBJECT_MAP = {
         'social': ['history', 'geography', 'civics', '歷史', '地理', '公民', '社會'],
-        'natural': ['physics', 'chemistry', 'biology', 'earth_science', '理化', '生物', '地科'],
+        'natural': ['physics', 'chemistry', 'biology', 'earth_science', '理化', '生物', '地科', '自然'],
         'math': ['math', '數學'],
         'chinese': ['chinese', '國文'],
         'english': ['english', '英文']
@@ -97,7 +98,7 @@
         // 產生一張「錯誤提示卡」，讓畫面不會空白
         createFallbackQuestion: function(sub, grd, reason) {
             return {
-                question: `【系統提示：${reason}】<br>無法找到科目：<b>${sub}</b><br>年級：<b>${grd}</b><br>請確認 mockdata 資料夾內的 templates_*.js 是否已載入 HTML。`,
+                question: `【系統提示：${reason}】<br>無法找到科目：<b>${sub}</b><br>年級：<b>${grd}</b><br>請確認 mockdata 資料夾內的 templates_*.js 是否已載入 HTML。<br>或按 F12 檢查 Console。`,
                 options: ["重新整理", "檢查 Console Log", "聯絡管理員", "略過此題"],
                 answer: 0,
                 concept: "系統除錯"
