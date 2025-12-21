@@ -400,9 +400,11 @@
         // ==========================================
         function finishExam() {
             try {
-                clearInterval(timerInterval);
-                recordTime(); // 記錄最後一題時間
+                // 1. 停止計時
+                if (timerInterval) clearInterval(timerInterval);
+                recordTime(); 
 
+                // 2. 檢查未作答
                 const unanswered = userAnswers.filter(a => a === null).length;
                 if (unanswered > 0 && !confirm(`還有 ${unanswered} 題未作答，確定要交卷嗎？`)) {
                     startTimer(); // 取消交卷則恢復計時
@@ -411,19 +413,20 @@
 
                 console.log("📝 正在計算成績...");
 
+                // 3. 計算成績
                 let correctCount = 0;
                 let wrongList = [];
                 
-                // 計算秒數異常 (極速作答)
+                // 作弊偵測
                 let fastCount = 0;
-                timeLog.forEach(t => { if(t < 3) fastCount++; });
+                if (timeLog) timeLog.forEach(t => { if(t < 3) fastCount++; });
+                
                 let cheatLevel = 'NORMAL';
                 if (fastCount > 3) cheatLevel = 'MEDIUM';
                 if (fastCount > 5) cheatLevel = 'HIGH';
 
-                // 計算分頁切換
                 let tabLevel = 'NORMAL';
-                const switchCount = tabLog.length;
+                const switchCount = tabLog ? tabLog.length : 0;
                 if (switchCount > 0) tabLevel = 'MEDIUM';
                 if (switchCount > 3) tabLevel = 'HIGH';
 
@@ -440,12 +443,12 @@
                     }
                 });
 
-                // 建立成績單物件
+                // 4. 建立成績單
                 const newRecord = {
                     id: Date.now(), 
                     date: new Date().toLocaleString(), 
-                    subject: examInfo.subject, 
-                    title: examInfo.title,
+                    subject: examInfo.subject || 'Unknown', 
+                    title: examInfo.title || '測驗',
                     score: Math.round((correctCount / mockQuestions.length) * 100), 
                     correctCount, 
                     totalCount: mockQuestions.length, 
@@ -454,24 +457,29 @@
                     tabCheat: { level: tabLevel, totalSwitch: switchCount }
                 };
 
-                // 儲存到 LocalStorage
-                if (!currentUser) currentUser = Auth.getCurrentUser(); // 雙重保險
+                // 5. ★★★ 關鍵修復：在這裡直接獲取使用者 ★★★
+                // 不依賴外部的全域變數，確保一定抓得到
+                const currentUser = window.Auth ? window.Auth.getCurrentUser() : null;
+
                 if (currentUser) {
                     const storageKey = `history_${currentUser.username}`;
                     let history = JSON.parse(localStorage.getItem(storageKey) || "[]");
                     history.push(newRecord);
                     localStorage.setItem(storageKey, JSON.stringify(history));
+                    console.log(`已儲存至 ${currentUser.username} 的歷史紀錄`);
+                } else {
+                    console.warn("⚠️ 無法獲取使用者資訊，僅儲存暫時結果");
                 }
                 
-                // 儲存本次結果供分析頁使用
+                // 儲存本次結果供分析頁使用 (這行最重要，分析頁是讀這個)
                 localStorage.setItem('examResult', JSON.stringify(newRecord));
                 
                 console.log("✅ 交卷成功，跳轉中...");
                 window.location.href = "analysis.html";
 
             } catch (e) {
-                console.error("交卷時發生錯誤:", e);
-                alert("交卷失敗！請檢查 Console 或聯絡管理員。");
+                console.error("❌ 交卷時發生錯誤:", e);
+                alert("交卷失敗！請截圖 Console 錯誤訊息並聯絡管理員。\n錯誤: " + e.message);
             }
         }
     </script>
