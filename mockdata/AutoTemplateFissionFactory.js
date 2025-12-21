@@ -1,36 +1,64 @@
-// mockdata/AutoTemplateFissionFactory.js
-(function () {
-    console.log("🧩 AutoTemplateFissionFactory 初始化中...");
+(function(global){
+    'use strict';
 
-    const Factory = {
-        templates: {},
-        ready: false,
+    function initFactory() {
+        const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
+        if (!G) { setTimeout(initFactory, 50); return; }
 
-        register(subject, list) {
-            if (!Array.isArray(list)) return;
-            if (!this.templates[subject]) {
-                this.templates[subject] = [];
-            }
-            this.templates[subject].push(...list);
-        },
+        // 1. 情境資料庫
+        const DB = {
+            roles: ["AI工程師", "YouTuber", "外送員", "偵探", "太空人", "主廚", "電競選手", "魔法師"],
+            places: ["在便利商店", "在火星基地", "在古老圖書館", "在直播間", "在無人島", "在跨年晚會"],
+            formats: [
+                { type: "news", tpl: (q)=>`【快訊】據報導：\n${q}\n專家表示這將影響重大。` },
+                { type: "chat", tpl: (q)=>`A：「考你一題：${q}」\nB：「這簡單...」` },
+                { type: "diary", tpl: (q)=>`【日記】今天老師問了一個問題：\n${q}\n我該怎麼回答？` },
+                { type: "guide", tpl: (q)=>`【攻略】新手教學：\n${q}\n學會這個就能通關！` }
+            ]
+        };
 
-        getTemplates(subject) {
-            return this.templates[subject] || [];
+        const CONTEXT_WRAPPERS = { 'standard': (q) => q };
+        const { pick } = G.utils;
+
+        // 生成隨機角色情境
+        for (let i = 0; i < 20; i++) {
+            CONTEXT_WRAPPERS[`roleplay_${i}`] = (q) => {
+                const r = pick(DB.roles);
+                const p = pick(DB.places);
+                return `【情境：${r}】\n你${p}，遇到一個難題：\n「${q}」\n身為專業的${r}，請選出正確答案。`;
+            };
         }
-    };
+        // 生成格式情境
+        DB.formats.forEach(fmt => { CONTEXT_WRAPPERS[fmt.type] = fmt.tpl; });
 
-    // 🔑 掛到 window（關鍵）
-    window.AutoTemplateFissionFactory = Factory;
+        // 2. 掛載裂變功能
+        G.autoFissionRegister = function(originalId, originalFunc, tags, rawRegister) {
+            // A. 註冊原始版
+            rawRegister.call(G, originalId, originalFunc, tags);
 
-    // 🔔 等下一個 tick，確保所有 template js 都已執行
-    setTimeout(() => {
-        Factory.ready = true;
+            // B. 註冊變體版 (隨機挑選一種情境包裝)
+            const keys = Object.keys(CONTEXT_WRAPPERS).filter(k => k !== 'standard');
+            const key = pick(keys);
+            const wrapper = CONTEXT_WRAPPERS[key];
+            const fissionId = `${originalId}_fission_${key}`;
 
-        console.log(
-            `✅ 自動裂變工廠已啟動：${Object.keys(Factory.templates).length} 種科目`
-        );
+            const newFunc = function(ctx, rnd) {
+                const data = originalFunc(ctx, rnd);
+                if (data && typeof data.question === 'string') {
+                    return {
+                        ...data,
+                        question: wrapper(data.question),
+                        concept: `${data.concept || ''} (應用)`,
+                        templateId: fissionId
+                    };
+                }
+                return data;
+            };
+            // 變體版多加 "素養" 標籤
+            rawRegister.call(G, fissionId, newFunc, [...tags, "素養題", "情境應用"]);
+        };
 
-        // 🚨 發出「我好了」事件（核心）
-        window.dispatchEvent(new Event("AutoTemplateFissionFactoryReady"));
-    }, 0);
-})();
+        console.log(`✅ 自動裂變工廠已就緒 (含 ${Object.keys(CONTEXT_WRAPPERS).length} 種模組)`);
+    }
+    initFactory();
+})(window);
