@@ -1,27 +1,14 @@
-function init() {
-  const G = global.RigorousGenerator || window.global?.RigorousGenerator;
+(function (global) {
+    'use strict';
 
-  if (
-    !G ||
-    !G.registerTemplate ||
-    !G.utils ||
-    typeof G.utils.pick !== "function"
-  ) {
-    return setTimeout(init, 100);
-  }
+    function init() {
+        const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
+        if (!G || !G.registerTemplate) {
+            setTimeout(init, 100);
+            return;
+        }
 
-  const { pick, shuffle } = G.utils;
-  const gradeOrder = ["國七", "國八", "國九", "高一"];
-
-  // ⬇ 後面邏輯全部安全
-    function allow(item, ctx) {
-      const g = ctx.tags.find(t => gradeOrder.includes(t));
-      if (!g) return false;
-
-      return g.startsWith("國")
-        ? item.t[0] === g
-        : gradeOrder.indexOf(item.t[0]) <= gradeOrder.indexOf(g);
-    }
+        const { pick, shuffle } = G.utils;
 
     const db = [
       // ----------------------------------------------------
