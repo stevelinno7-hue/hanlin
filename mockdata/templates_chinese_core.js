@@ -1,4 +1,4 @@
-(function(global){
+(function (global) {
     'use strict';
 
     function init() {
@@ -13,10 +13,7 @@
         // ===============================
         // 國文核心資料庫
         // ===============================
-          // ==========================================
-    // 國文科核心資料庫 (Chinese Core Database)
-    // ==========================================
-    const chiData = [
+        const chiData = [
         // ------------------------------------------
         // 1. 成語判讀 (Idioms)
         // ------------------------------------------
@@ -161,27 +158,39 @@
         { q: "一桿稱仔", a: "賴和 (台灣新文學之父)", tag: ["高三","現代文"] },
         { q: "壓不扁的玫瑰", a: "楊逵 (抗日精神)", tag: ["高三","現代文"] }
     ];
-
+         window.chiData || [];
 
         // ===============================
-        // 工具：依年級過濾
+        // 嚴格依年級＋類別過濾
         // ===============================
-        function byGrade(data, grade) {
-            return data.filter(x => x.tag.includes(grade));
+        function byGradeAndCat(grade, cat) {
+            return chiData.filter(x => x.tag[0] === grade && x.tag[1] === cat);
+        }
+
+        function byGrade(grade) {
+            return chiData.filter(x => x.tag[0] === grade);
         }
 
         // ===============================
-        // 自動產生模板（定義＋反向）
+        // 出一題（保證不跨年級）
         // ===============================
-        function makeGradeTemplates(grade) {
+        function makeSafeQuestion(grade, reverse = false) {
+            const gradeData = byGrade(grade);
+            if (gradeData.length < 4) return null;
 
-            // -------- 定義題 --------
-            G.registerTemplate(`chi_definition_${grade}`, () => {
-                const data = byGrade(chiData, grade);
-                const item = pick(data);
+            let item, pool;
+            let tries = 0;
 
-                const sameCat = data.filter(x => x.tag[1] === item.tag[1] && x.q !== item.q);
-                const pool = sameCat.length >= 3 ? sameCat : data.filter(x => x.q !== item.q);
+            while (tries < 20) {
+                item = pick(gradeData);
+                pool = byGradeAndCat(grade, item.tag[1]).filter(x => x.q !== item.q);
+                if (pool.length >= 3) break;
+                tries++;
+            }
+
+            if (!item || pool.length < 3) return null;
+
+            if (!reverse) {
                 const wrong = shuffle(pool).slice(0, 3).map(x => x.a);
                 const opts = shuffle([item.a, ...wrong]);
 
@@ -192,15 +201,7 @@
                     concept: item.tag[1],
                     explanation: [`正確答案：${item.a}`]
                 };
-            }, ["chinese","國文",grade]);
-
-            // -------- 反向題 --------
-            G.registerTemplate(`chi_reverse_${grade}`, () => {
-                const data = byGrade(chiData, grade);
-                const item = pick(data);
-
-                const sameCat = data.filter(x => x.tag[1] === item.tag[1] && x.q !== item.q);
-                const pool = sameCat.length >= 3 ? sameCat : data.filter(x => x.q !== item.q);
+            } else {
                 const wrong = shuffle(pool).slice(0, 3).map(x => x.q);
                 const opts = shuffle([item.q, ...wrong]);
 
@@ -211,15 +212,27 @@
                     concept: item.tag[1],
                     explanation: [`${item.q} → ${item.a}`]
                 };
-            }, ["chinese","國文",grade,"判讀"]);
+            }
         }
 
         // ===============================
-        // 建立所有年級模板
+        // 註冊模板（永不回退）
         // ===============================
-        ["國七","國八","國九","高一","高二","高三"].forEach(makeGradeTemplates);
+        ["國七", "國八", "國九", "高一", "高二", "高三"].forEach(grade => {
 
-        console.log("✅ 國文題庫（年級嚴格分流）已載入完成");
+            G.registerTemplate(`chi_definition_${grade}`, () => {
+                const q = makeSafeQuestion(grade, false);
+                return q || makeSafeQuestion(grade, false);
+            }, ["chinese", "國文", grade]);
+
+            G.registerTemplate(`chi_reverse_${grade}`, () => {
+                const q = makeSafeQuestion(grade, true);
+                return q || makeSafeQuestion(grade, true);
+            }, ["chinese", "國文", grade, "判讀"]);
+
+        });
+
+        console.log("✅ 國文題庫【完全鎖年級】版本已載入");
     }
 
     init();
