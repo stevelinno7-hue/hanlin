@@ -110,9 +110,10 @@
             </div>
         </div>
     </main>
-
-    <script>
-        // 全域變數
+<script>
+        // ==========================================
+        // 全域變數設定
+        // ==========================================
         let mockQuestions = [];
         let currentQIndex = 0;
         let userAnswers = [];
@@ -126,7 +127,10 @@
         let tabLog = [];
         let tabLeave = null;
 
-        // DOM 元素
+        // 當前使用者 (關鍵修正)
+        let currentUser = null;
+
+        // DOM 元素快取
         const els = {
             title: document.getElementById('examTitle'),
             sub: document.getElementById('examSubject'),
@@ -143,11 +147,15 @@
             palette: document.getElementById('questionPalette')
         };
 
-        // 1. 系統初始化 (確保資料載入順序)
+        // ==========================================
+        // 1. 系統初始化
+        // ==========================================
         window.onload = function() {
+            // 1. 驗證登入
             if (!Auth.requireLogin()) return;
+            currentUser = Auth.getCurrentUser(); // 獲取使用者資訊
 
-            // A. 先載入課程資料
+            // 2. 載入課程資料庫 (如果是空的就初始化)
             window.initCurriculumData = function() {
                 let all = [];
                 if (window.CurriculumLibrary && window.CurriculumLibrary.data) {
@@ -159,13 +167,14 @@
             };
             if(window.initCurriculumData) window.initCurriculumData();
 
-            // B. 延遲啟動測驗 (確保所有題庫 JS 都載入完成)
+            // 3. 延遲啟動測驗 (確保所有題庫 JS 都載入完成)
+            console.log("⏳ 正在準備測驗...");
             setTimeout(() => {
                 prepareExam();
-            }, 500); // 這裡稍微延遲久一點，確保安全
+            }, 500); 
         };
 
-        // 防作弊監聽
+        // 防作弊：分頁切換監聽
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
                 tabLeave = Date.now();
@@ -176,18 +185,23 @@
             }
         });
 
+        // ==========================================
         // 2. 準備測驗資料
+        // ==========================================
         function prepareExam() {
             const urlParams = new URLSearchParams(window.location.search);
             const courseId = urlParams.get('id');
             let subject = urlParams.get('subject') || 'math';
             const count = parseInt(urlParams.get('count')) || 10;
 
+            // 科目名稱校正
             if (subject === 'earth_science' || subject === 'earth') subject = 'earth'; 
             if (subject === 'social') subject = 'history'; 
 
-            // 尋找課程物件
+            // 尋找課程物件 & 標籤
             let targetCourse = null;
+            let courseTags = [];
+            
             if (window.Curriculum108) {
                 for (let book of window.Curriculum108) {
                     if (book.courses) {
@@ -197,9 +211,17 @@
                 }
             }
 
-            // 取得標籤
-            const courseTags = targetCourse ? targetCourse.tags : [];
-            console.log(`🎯 目標課程: ${targetCourse ? targetCourse.name : '未知'}, 標籤:`, courseTags);
+            // 如果找不到課程，就用預設標籤
+            if (targetCourse) {
+                courseTags = targetCourse.tags;
+            } else {
+                console.warn("⚠️ 找不到對應課程，使用通用標籤");
+                const gradeMap = { 'j': '國七', 's': '高一' }; // 簡易判斷
+                const gradeTag = gradeMap[courseId?.charAt(0)] || '國七';
+                courseTags = [subject, gradeTag, '核心'];
+            }
+
+            console.log(`🎯 目標: ${targetCourse ? targetCourse.name : subject}, 標籤:`, courseTags);
 
             // 設定考卷資訊
             examInfo = {
@@ -209,23 +231,29 @@
             };
             timeLeft = examInfo.timeLimit;
 
-            // 生成題目
+            // 生成題目 (Paper Generator)
             if (window.generatePaper) {
-                mockQuestions = window.generatePaper({
-                    subject: subject,
-                    total: count,
-                    tags: courseTags, 
-                    distribution: { memory: 0.2, understand: 0.3, apply: 0.3, analyze: 0.2 }
-                });
+                try {
+                    mockQuestions = window.generatePaper({
+                        subject: subject,
+                        total: count,
+                        tags: courseTags, 
+                        distribution: { memory: 0.2, understand: 0.3, apply: 0.3, analyze: 0.2 }
+                    });
+                } catch (e) {
+                    console.error("生成題目失敗:", e);
+                    alert("題目生成發生錯誤，請重新整理頁面");
+                }
             } else {
-                console.warn("Paper Generator not ready");
-                for(let i=0; i<count; i++) mockQuestions.push({question:"系統載入中...", options:["A"], answer:0});
+                console.error("❌ Paper Generator 未載入");
+                alert("系統錯誤：題庫引擎未載入");
             }
 
+            // 初始化狀態
             userAnswers = new Array(mockQuestions.length).fill(null);
             timeLog = new Array(mockQuestions.length).fill(0);
             
-            // UI 初始化
+            // UI 更新
             els.title.textContent = examInfo.title;
             els.sub.textContent = examInfo.subject;
             els.totalNum.textContent = mockQuestions.length;
@@ -236,22 +264,29 @@
             updateNav();
         }
 
-        // 3. 渲染題目
+        // ==========================================
+        // 3. 渲染題目與互動
+        // ==========================================
         function renderQuestion() {
+            if (mockQuestions.length === 0) return;
+
             enterTime = Date.now(); // 重置單題計時
             const q = mockQuestions[currentQIndex];
             els.currNum.textContent = currentQIndex + 1;
             
             els.qText.innerHTML = q.question.replace(/\n/g, '<br>');
             
+            // MathJax 渲染
             if (window.MathJax) {
                 MathJax.typesetPromise([els.qText]).then(() => {});
             }
 
+            // 標籤顯示
             els.badge.textContent = q.concept || "綜合題型";
             const tagColor = q.concept && q.concept.includes("分析") ? "red" : q.concept && q.concept.includes("應用") ? "green" : "purple";
             els.badge.className = `text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide border bg-${tagColor}-100 text-${tagColor}-700 border-${tagColor}-200`;
 
+            // 選項渲染
             els.opts.innerHTML = '';
             q.options.forEach((opt, idx) => {
                 const btn = document.createElement('button');
@@ -271,7 +306,7 @@
                 btn.onclick = () => {
                     userAnswers[currentQIndex] = idx;
                     recordTime(); // 記錄作答時間
-                    renderQuestion();
+                    renderQuestion(); // 重新渲染以顯示選取狀態
                     updatePaletteStatus();
                 };
                 els.opts.appendChild(btn);
@@ -317,10 +352,16 @@
 
         function updateNav() {
             els.prev.disabled = currentQIndex === 0;
+            
+            // 移除舊的 event listeners 以免重複綁定
+            const newNextBtn = els.next.cloneNode(true);
+            els.next.parentNode.replaceChild(newNextBtn, els.next);
+            els.next = newNextBtn;
+
             if (currentQIndex === mockQuestions.length - 1) {
                 els.next.innerHTML = '交卷 <i class="fas fa-check ml-2"></i>';
                 els.next.className = "bg-green-600 text-white px-6 py-2 rounded-lg font-bold shadow-md hover:bg-green-700 transition flex items-center gap-2";
-                els.next.onclick = finishExam;
+                els.next.onclick = finishExam; // 綁定交卷
             } else {
                 els.next.innerHTML = '下一題 <i class="fas fa-arrow-right ml-2"></i>';
                 els.next.className = "bg-white border border-gray-300 hover:border-blue-500 text-gray-700 px-6 py-2 rounded-lg font-bold shadow-sm transition flex items-center gap-2";
@@ -339,9 +380,12 @@
                 renderQuestion(); 
             }
         };
+        
+        // 綁定上方交卷按鈕
         els.submit.onclick = finishExam;
 
         function startTimer() {
+            if(timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(() => {
                 timeLeft--;
                 const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
@@ -351,56 +395,84 @@
             }, 1000);
         }
 
+        // ==========================================
+        // 4. 交卷邏輯 (關鍵修復)
+        // ==========================================
         function finishExam() {
-            clearInterval(timerInterval);
-            recordTime(); // 記錄最後一題時間
+            try {
+                clearInterval(timerInterval);
+                recordTime(); // 記錄最後一題時間
 
-            const unanswered = userAnswers.filter(a => a === null).length;
-            if (unanswered > 0 && !confirm(`還有 ${unanswered} 題未作答，確定交卷？`)) {
-                startTimer(); return;
+                const unanswered = userAnswers.filter(a => a === null).length;
+                if (unanswered > 0 && !confirm(`還有 ${unanswered} 題未作答，確定要交卷嗎？`)) {
+                    startTimer(); // 取消交卷則恢復計時
+                    return;
+                }
+
+                console.log("📝 正在計算成績...");
+
+                let correctCount = 0;
+                let wrongList = [];
+                
+                // 計算秒數異常 (極速作答)
+                let fastCount = 0;
+                timeLog.forEach(t => { if(t < 3) fastCount++; });
+                let cheatLevel = 'NORMAL';
+                if (fastCount > 3) cheatLevel = 'MEDIUM';
+                if (fastCount > 5) cheatLevel = 'HIGH';
+
+                // 計算分頁切換
+                let tabLevel = 'NORMAL';
+                const switchCount = tabLog.length;
+                if (switchCount > 0) tabLevel = 'MEDIUM';
+                if (switchCount > 3) tabLevel = 'HIGH';
+
+                // 比對答案
+                mockQuestions.forEach((q, idx) => {
+                    if (userAnswers[idx] === q.answer) {
+                        correctCount++;
+                    } else {
+                        wrongList.push({ 
+                            ...q, 
+                            yourAns: userAnswers[idx], 
+                            explanation: q.explanation 
+                        });
+                    }
+                });
+
+                // 建立成績單物件
+                const newRecord = {
+                    id: Date.now(), 
+                    date: new Date().toLocaleString(), 
+                    subject: examInfo.subject, 
+                    title: examInfo.title,
+                    score: Math.round((correctCount / mockQuestions.length) * 100), 
+                    correctCount, 
+                    totalCount: mockQuestions.length, 
+                    wrongList,
+                    cheat: { cheatLevel, fastCount },
+                    tabCheat: { level: tabLevel, totalSwitch: switchCount }
+                };
+
+                // 儲存到 LocalStorage
+                if (!currentUser) currentUser = Auth.getCurrentUser(); // 雙重保險
+                if (currentUser) {
+                    const storageKey = `history_${currentUser.username}`;
+                    let history = JSON.parse(localStorage.getItem(storageKey) || "[]");
+                    history.push(newRecord);
+                    localStorage.setItem(storageKey, JSON.stringify(history));
+                }
+                
+                // 儲存本次結果供分析頁使用
+                localStorage.setItem('examResult', JSON.stringify(newRecord));
+                
+                console.log("✅ 交卷成功，跳轉中...");
+                window.location.href = "analysis.html";
+
+            } catch (e) {
+                console.error("交卷時發生錯誤:", e);
+                alert("交卷失敗！請檢查 Console 或聯絡管理員。");
             }
-
-            let correctCount = 0;
-            let wrongList = [];
-            
-            // 計算秒數異常 (極速作答)
-            let fastCount = 0;
-            timeLog.forEach(t => { if(t < 3) fastCount++; });
-            let cheatLevel = 'NORMAL';
-            if (fastCount > 3) cheatLevel = 'MEDIUM';
-            if (fastCount > 5) cheatLevel = 'HIGH';
-
-            // 計算分頁切換
-            let tabLevel = 'NORMAL';
-            const switchCount = tabLog.length;
-            if (switchCount > 0) tabLevel = 'MEDIUM';
-            if (switchCount > 3) tabLevel = 'HIGH';
-
-            mockQuestions.forEach((q, idx) => {
-                if (userAnswers[idx] === q.answer) correctCount++;
-                else wrongList.push({ ...q, yourAns: userAnswers[idx], explanation: q.explanation });
-            });
-
-            const newRecord = {
-                id: Date.now(), 
-                date: new Date().toLocaleString(), 
-                subject: examInfo.subject, 
-                title: examInfo.title,
-                score: Math.round((correctCount / mockQuestions.length) * 100), 
-                correctCount, 
-                totalCount: mockQuestions.length, 
-                wrongList,
-                cheat: { cheatLevel, fastCount },
-                tabCheat: { level: tabLevel, totalSwitch: switchCount }
-            };
-
-            const storageKey = `history_${currentUser.username}`;
-            let history = JSON.parse(localStorage.getItem(storageKey) || "[]");
-            history.push(newRecord);
-            localStorage.setItem(storageKey, JSON.stringify(history));
-            localStorage.setItem('examResult', JSON.stringify(newRecord));
-            
-            window.location.href = "analysis.html";
         }
     </script>
 </body>
