@@ -1,94 +1,79 @@
 // mockdata/paper_generator.js
-(function () {
-    console.log("📄 [PaperGen] 初始化中...");
+(function (global) {
+    'use strict';
 
+    console.log("📄 PAPER GEN（Rigorous 相容版）初始化中...");
+
+    /**
+     * config = {
+     *   subject: "chinese" | "biology" | ...
+     *   total: number,
+     *   tags: [string]
+     * }
+     */
     function generatePaper(config) {
-        const { subject, total, tags } = config;
-
-        const factory = window.AutoTemplateFissionFactory;
-        if (!factory || !factory.ready) {
-            throw new Error("AutoTemplateFissionFactory 尚未完成初始化");
+        const G = global.RigorousGenerator;
+        if (!G || !G.templates) {
+            throw new Error("RigorousGenerator 尚未載入");
         }
 
-        const pool = factory.getTemplates(subject);
+        const total = config.total || 10;
+        const tags = config.tags || [];
 
-        if (!pool.length) {
-            throw new Error(`題庫為空：${subject}`);
-        }
+        // 1️⃣ 找出可用模板（依 tag）
+        const candidates = Object.values(G.templates).filter(tpl => {
+            if (!tpl.tags) return false;
+            return tags.some(tag => tpl.tags.includes(tag));
+        });
 
-        // 簡單洗牌
-        const shuffled = [...pool].sort(() => Math.random() - 0.5);
-
-        // 產題
-        const questions = shuffled.slice(0, total).map((q, idx) => ({
-            id: `${subject}_${Date.now()}_${idx}`,
-            ...q
-        }));
-
-        return questions;
-    }
-
-    // 🔑 一定要掛 window
-    window.generatePaper = generatePaper;
-
-    console.log("🔥 PAPER GEN VERSION 2025-01-SAFE 已載入");
-})();
+        if (!candidates.length) {
+            console.warn("⚠️ 找不到符合條件的模板", tags);
             return [];
         }
 
         const paper = [];
         const usedStems = new Set();
+        let tries = 0;
+        const MAX_TRIES = total * 10;
 
-        let attempts = 0;
-        const MAX_ATTEMPTS = count * 20;
+        // 2️⃣ 開始出題
+        while (paper.length < total && tries < MAX_TRIES) {
+            tries++;
 
-        // ✅ 這個 while 是你原本少掉的
-        while (paper.length < count && attempts < MAX_ATTEMPTS) {
-            attempts++;
+            const tpl = candidates[Math.floor(Math.random() * candidates.length)];
 
-            const tplName = templates[Math.floor(Math.random() * templates.length)];
             let q;
-
             try {
-                q = G.generateFromTemplate(tplName);
+                q = tpl.generator();
             } catch (e) {
-                warn("template 失敗", tplName, e);
+                console.warn("⚠️ 模板執行失敗", tpl.name, e);
                 continue;
             }
 
-            if (!q || typeof q.question !== 'string') continue;
+            if (!q || typeof q.question !== "string") continue;
 
             const stem = q.question.trim();
-            if (usedStems.has(stem)) {
-                continue; // 🚫 題幹重複
-            }
+            if (usedStems.has(stem)) continue; // 🚫 題幹不重複
 
             usedStems.add(stem);
-
             paper.push({
                 id: paper.length + 1,
                 ...q
             });
         }
 
-        if (paper.length < count) {
-            warn(`題目不足，只能出 ${paper.length} 題`);
+        // 3️⃣ 題目不足就停（不 fallback）
+        if (paper.length < total) {
+            console.warn(`⚠️ 題目不足，只能出 ${paper.length} 題`);
         }
 
-        log(`完成出題 ${paper.length}/${count}`);
+        console.log(`✅ 完成出題 ${paper.length}/${total}`);
         return paper;
     }
 
-    global.PaperGenerator = {
-        generatePaper
-    };
-    // 🔔 相容舊系統 / exam.html 偵測用
-    global.paperGenerator = global.PaperGenerator;
-    global.PAPER_GENERATOR_READY = true;
-    
-    // 如果 exam 有監聽事件（保險）
-    window.dispatchEvent(new Event("PaperGeneratorReady"));
+    // 🔑 對外掛載（這行非常重要）
+    global.generatePaper = generatePaper;
 
-    log("🔥 PAPER GEN VERSION 2025-01-SAFE（NO DUP STEM）已載入");
+    console.log("🔥 PAPER GEN VERSION 2025-01-RIGOROUS 已載入");
 
 })(window);
