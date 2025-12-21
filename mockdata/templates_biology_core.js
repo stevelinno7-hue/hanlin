@@ -1,12 +1,12 @@
-(function(global){
-    'use strict';
-    function init() {
-        const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
-        if (!G || !G.registerTemplate) { setTimeout(init, 100); return; }
-        const { pick, shuffle } = G.utils;
+(function (global) {
+  'use strict';
+  function init() {
+    const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
+    if (!G || !G.registerTemplate) { setTimeout(init, 100); return; }
+    const { pick, shuffle } = G.utils;
 
-        const bioDB = [
-             // ==========================================
+    const db = [
+     // ==========================================
         // 1. 生物 (Biology)
         // ==========================================
         // [國七] 細胞與生物體
@@ -85,22 +85,20 @@
         { s:"生物", t:["高二","生理"], q: "特異性免疫的主角", a: "淋巴球 (B細胞/T細胞)" },
         { s:"生物", t:["高二","生態"], q: "族群成長曲線(S型)的上限", a: "負荷量 (K值)" },
 
-        ];
+    ];
 
-        // 註冊基礎題
-        G.registerTemplate('bio_concept', (ctx, rnd) => {
-            const item = pick(bioDB);
-            const wrong = shuffle(bioDB.filter(x => x.a !== item.a)).slice(0, 3).map(x => x.a);
-            const opts = shuffle([item.a, ...wrong]);
-            return {
-                question: `【生物｜${item.t[0]}】${item.q}，請問是指下列何者？`,
-                options: opts,
-                answer: opts.indexOf(item.a),
-                concept: item.t[1]
-            };
-        }, ["biology", "生物", "自然"]);
-
-        console.log("✅ [Biology] 載入完成");
-    }
-    init();
+    G.registerTemplate('biology_core', (ctx) => {
+      const pool = (ctx && ctx.tags) ? db.filter(item => ctx.tags.includes(item.t[0])) : db;
+      if (pool.length < 1) return null;
+      const base = pick(pool);
+      const wrong = shuffle(db.filter(x => x.a !== base.a)).slice(0, 3).map(x => x.a);
+      const opts = shuffle([base.a, ...wrong]);
+      return {
+        question: `【生物｜${base.t[1]}】${base.q}？`,
+        options: opts, answer: opts.indexOf(base.a),
+        concept: base.t[1]
+      };
+    }, ["biology", "生物", "自然"]);
+  }
+  init();
 })(this);
