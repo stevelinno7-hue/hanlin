@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>解題論壇 (AI版) - 翰點雲端學院</title>
+    <title>解題論壇 (AI版) - 翰林雲端學院</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
     
     <style>
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #f8fafc; color: #334155; }
@@ -18,10 +18,8 @@
             color: #2563eb !important;            /* text-blue-600 */
             font-weight: 700;
         }
-        .nav-item-inactive { color: #64748b; }
-        .nav-item-inactive:hover { background-color: #f8fafc; color: #1e293b; }
 
-        /* AI 回覆卡片樣式 */
+        /* AI 回覆卡片樣式：優雅的漸層 */
         .ai-reply-card {
             background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
             border-left: 4px solid #3b82f6;
@@ -29,15 +27,19 @@
         
         .no-scrollbar::-webkit-scrollbar { display: none; }
         
-        /* Markdown 內容微調 */
-        .markdown-body ul { list-style-type: disc; margin-left: 1.5rem; }
-        .markdown-body p { margin-bottom: 0.5rem; }
+        /* Markdown 內容美化 */
+        .markdown-body ul { list-style-type: disc; margin-left: 1.5rem; margin-bottom: 1rem; }
+        .markdown-body p { margin-bottom: 0.75rem; line-height: 1.6; }
+        .markdown-body code { background: #e2e8f0; padding: 0.2rem 0.4rem; rounded: 0.25rem; font-family: monospace; }
 
         /* 打字動畫 */
         .typing-dot { animation: typing 1.4s infinite ease-in-out both; }
         .typing-dot:nth-child(1) { animation-delay: -0.32s; }
         .typing-dot:nth-child(2) { animation-delay: -0.16s; }
         @keyframes typing { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+
+        .fade-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 
     <script src="mockdata/users.js"></script>
@@ -45,6 +47,7 @@
     <script src="assets/js/real_ai_tutor.js"></script>
 </head>
 <body class="h-screen flex overflow-hidden">
+
 <aside class="w-64 bg-white border-r border-slate-100 hidden lg:flex flex-col z-20 shrink-0 h-screen sticky top-0">
     <div class="h-16 flex items-center px-6 border-b border-slate-50">
         <div class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm mr-2 shadow-sm">翰</div>
@@ -64,20 +67,20 @@
         </div>
     </div>
 
-  <nav id="mainNav" class="flex-grow px-3 space-y-1 overflow-y-auto no-scrollbar">
-    <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all text-sm font-medium">
-        <i class="fas fa-th-large w-5 text-center"></i> 課程總覽
-    </a>
-    <a href="remedial.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all text-sm font-medium">
-        <i class="fas fa-book-medical w-5 text-center"></i> 錯題補救
-    </a>
-    <a href="analysis.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all text-sm font-medium">
-        <i class="fas fa-chart-pie w-5 text-center"></i> 學習分析
-    </a>
-    <a href="forum.html" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-50 text-blue-600 font-bold shadow-sm transition-all text-sm">
-        <i class="fas fa-comments w-5 text-center text-blue-600"></i> 解題論壇
-    </a>
-</nav>
+    <nav id="mainNav" class="flex-grow px-3 space-y-1 overflow-y-auto no-scrollbar">
+        <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all text-sm font-medium">
+            <i class="fas fa-th-large w-5 text-center"></i> 課程總覽
+        </a>
+        <a href="remedial.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all text-sm font-medium">
+            <i class="fas fa-book-medical w-5 text-center"></i> 錯題補救
+        </a>
+        <a href="analysis.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all text-sm font-medium">
+            <i class="fas fa-chart-pie w-5 text-center"></i> 學習分析
+        </a>
+        <a href="forum.html" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-50 text-blue-600 font-bold shadow-sm transition-all text-sm">
+            <i class="fas fa-comments w-5 text-center text-blue-600"></i> 解題論壇
+        </a>
+    </nav>
 
     <div class="p-4 border-t border-slate-50">
         <button onclick="Auth.logout()" class="w-full flex items-center justify-center gap-2 text-slate-400 hover:text-red-500 py-3 transition-colors font-bold text-xs">
@@ -86,177 +89,183 @@
     </div>
 </aside>
 
-    <main class="flex-grow flex flex-col h-full relative overflow-hidden bg-[#fcfdfe]">
-        <header class="h-16 bg-white border-b border-slate-100 flex items-center justify-between px-8 shrink-0 z-10">
-            <div class="flex items-center gap-3">
-                <h2 class="text-lg font-bold text-slate-800">解題討論區</h2>
-                <span class="text-slate-200">|</span>
-                <span class="text-[10px] bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full font-bold border border-emerald-100 uppercase tracking-wider">
-                    <i class="fas fa-circle text-[6px] mr-1.5 align-middle"></i> AI Online
-                </span>
-            </div>
-            
-            <button onclick="toggleForm()" class="bg-blue-600 text-white px-5 py-2 rounded-xl text-xs font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-100 flex items-center gap-2">
-                <i class="fas fa-plus"></i> 我要提問
-            </button>
-        </header>
-
-        <div class="flex-grow overflow-y-auto p-8 no-scrollbar" id="scrollContainer">
-            <div class="max-w-3xl mx-auto pb-20">
-                
-                <div id="postForm" class="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-50 mb-8 hidden fade-in relative">
-                    <button onclick="toggleForm()" class="absolute top-6 right-6 text-slate-300 hover:text-slate-500 transition"><i class="fas fa-times"></i></button>
-                    <h3 class="font-bold text-slate-800 mb-6 flex items-center gap-2 text-base">
-                        <span class="bg-blue-50 text-blue-500 w-8 h-8 rounded-full flex items-center justify-center text-sm"><i class="fas fa-question"></i></span>
-                        建立新提問
-                    </h3>
-                    <div class="space-y-4">
-                        <input id="postTitle" type="text" placeholder="標題：例如「高一數學三角函數問題」..." class="w-full p-4 border border-slate-100 rounded-2xl bg-slate-50/50 focus:outline-none focus:border-blue-200 font-bold transition">
-                        <textarea id="postContent" placeholder="請詳細描述問題，AI 助教將會為您解答..." class="w-full p-4 border border-slate-100 rounded-2xl bg-slate-50/50 focus:outline-none focus:border-blue-200 h-32 resize-none transition"></textarea>
-                        <div class="flex justify-between items-center pt-2">
-                            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-2">
-                                <i class="fas fa-robot text-blue-400"></i> Powered by Gemini AI
-                            </span>
-                            <button onclick="addPost()" class="bg-slate-800 text-white px-8 py-3 rounded-2xl font-bold hover:bg-slate-900 transition text-sm">發佈問題</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="postList" class="space-y-6"></div>
-
-                <div id="aiThinking" class="hidden mt-6 bg-white px-6 py-4 rounded-full border border-slate-100 flex items-center gap-3 w-fit mx-auto shadow-sm">
-                    <div class="w-6 h-6 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center text-xs"><i class="fas fa-robot"></i></div>
-                    <div class="flex gap-1">
-                        <div class="w-1.5 h-1.5 bg-blue-300 rounded-full typing-dot"></div>
-                        <div class="w-1.5 h-1.5 bg-blue-300 rounded-full typing-dot"></div>
-                        <div class="w-1.5 h-1.5 bg-blue-300 rounded-full typing-dot"></div>
-                    </div>
-                    <span class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Assistant is thinking</span>
-                </div>
-
-            </div>
+<main class="flex-grow flex flex-col h-full relative overflow-hidden bg-[#fcfdfe]">
+    <header class="h-16 bg-white border-b border-slate-100 flex items-center justify-between px-8 shrink-0 z-10">
+        <div class="flex items-center gap-3">
+            <h2 class="text-lg font-bold text-slate-800">解題討論區</h2>
+            <span class="text-slate-200">|</span>
+            <span class="text-[10px] bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full font-bold border border-emerald-100 uppercase tracking-wider">
+                <i class="fas fa-circle text-[6px] mr-1.5 align-middle"></i> AI Tutor Online
+            </span>
         </div>
-    </main>
-    <script>
-        const currentUser = Auth.requireLogin();
-        if (currentUser) {
-            document.getElementById('sideUserName').textContent = currentUser.name;
-            document.getElementById('sideUserRole').textContent = currentUser.grade || "學生";
-        }
+        
+        <button onclick="toggleForm()" class="bg-blue-600 text-white px-5 py-2 rounded-xl text-xs font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-100 flex items-center gap-2">
+            <i class="fas fa-plus"></i> 我要提問
+        </button>
+    </header>
 
-        const dbKey = 'forum_posts';
-
-        function toggleForm() {
-            const form = document.getElementById('postForm');
-            form.classList.toggle('hidden');
-            if (!form.classList.contains('hidden')) document.getElementById('postTitle').focus();
-        }
-
-        function loadPosts() {
-            const posts = JSON.parse(localStorage.getItem(dbKey) || "[]");
-            const container = document.getElementById('postList');
-            container.innerHTML = '';
-
-            if (posts.length === 0) {
-                renderPost({
-                    id: 0, title: "歡迎來到解題論壇 (AI 版)", content: "這是一個自動生成的範例貼文。",
-                    author: "系統管理員", role: "admin", date: "2025/01/01",
-                    reply: { author: RealAITutor.name, content: "你好！我已經準備好為您解答任何課業問題了。" }
-                });
-            } else {
-                posts.reverse().forEach(post => renderPost(post));
-            }
-        }
-
-        function renderPost(post) {
-            const isAIReply = post.reply && post.reply.author === RealAITutor.name;
-            const userIconColor = post.role === 'admin' ? 'bg-gray-200 text-gray-600' : 'bg-blue-100 text-blue-600';
+    <div class="flex-grow overflow-y-auto p-8 no-scrollbar" id="scrollContainer">
+        <div class="max-w-3xl mx-auto pb-20">
             
-            let replyHtml = '';
-            if (post.reply) {
-                // 使用 marked.parse 來渲染 Markdown
-                const parsedContent = marked.parse(post.reply.content);
-                const replyClass = isAIReply ? 'ai-reply-card' : 'bg-gray-50 border-gray-200';
-                const replyIcon = isAIReply 
-                    ? `<div class="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-sm shadow-md"><i class="fas fa-robot"></i></div>`
-                    : `<div class="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center font-bold text-xs">師</div>`;
-                
-                replyHtml = `
-                    <div class="mt-4 p-5 rounded-xl border ${replyClass} flex gap-4 transition hover:shadow-sm">
-                        <div class="flex-shrink-0">${replyIcon}</div>
-                        <div class="flex-grow min-w-0">
-                            <div class="flex items-center gap-2 mb-2">
-                                <span class="font-bold text-sm text-gray-800">${post.reply.author}</span>
-                                ${isAIReply ? '<span class="bg-indigo-100 text-indigo-700 text-[10px] px-1.5 py-0.5 rounded font-bold">Gemini 1.5</span>' : ''}
-                            </div>
-                            <div class="text-sm text-gray-700 leading-relaxed markdown-body">
-                                ${parsedContent}
-                            </div>
-                        </div>
-                    </div>`;
-            } else {
-                replyHtml = `<div class="mt-4 flex items-center gap-2 text-xs text-gray-400 bg-gray-50 px-3 py-2 rounded-lg border border-gray-100 border-dashed"><i class="far fa-clock"></i> 等待助教回覆中...</div>`;
-            }
+            <div id="postForm" class="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 mb-8 hidden fade-in relative">
+                <button onclick="toggleForm()" class="absolute top-6 right-6 text-slate-300 hover:text-slate-500 transition"><i class="fas fa-times"></i></button>
+                <h3 class="font-bold text-slate-800 mb-6 flex items-center gap-2 text-base">
+                    <span class="bg-blue-50 text-blue-500 w-8 h-8 rounded-full flex items-center justify-center text-sm"><i class="fas fa-question"></i></span>
+                    建立新提問
+                </h3>
+                <div class="space-y-4">
+                    <input id="postTitle" type="text" placeholder="標題：例如「九年級數學三角函數問題」..." class="w-full p-4 border border-slate-100 rounded-2xl bg-slate-50/50 focus:outline-none focus:border-blue-200 font-bold transition">
+                    <textarea id="postContent" placeholder="請詳細描述問題，AI 助教將會立刻為您解答..." class="w-full p-4 border border-slate-100 rounded-2xl bg-slate-50/50 focus:outline-none focus:border-blue-200 h-32 resize-none transition"></textarea>
+                    <div class="flex justify-between items-center pt-2">
+                        <span class="text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-2">
+                            <i class="fas fa-robot text-blue-400"></i> Powered by Gemini 1.5 Pro
+                        </span>
+                        <button onclick="addPost()" class="bg-slate-800 text-white px-8 py-3 rounded-2xl font-bold hover:bg-slate-900 transition text-sm shadow-md">發佈問題</button>
+                    </div>
+                </div>
+            </div>
 
-            const html = `
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 hover:border-blue-200 transition group">
-                    <div class="flex gap-4">
-                        <div class="flex-shrink-0">
-                            <div class="w-10 h-10 rounded-full ${userIconColor} flex items-center justify-center text-lg font-bold shadow-sm">${post.author[0]}</div>
+            <div id="postList" class="space-y-6"></div>
+
+            <div id="aiThinking" class="hidden mt-6 bg-white px-6 py-4 rounded-full border border-slate-100 flex items-center gap-3 w-fit mx-auto shadow-sm fade-in">
+                <div class="w-6 h-6 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center text-xs"><i class="fas fa-robot"></i></div>
+                <div class="flex gap-1">
+                    <div class="w-1.5 h-1.5 bg-blue-300 rounded-full typing-dot"></div>
+                    <div class="w-1.5 h-1.5 bg-blue-300 rounded-full typing-dot"></div>
+                    <div class="w-1.5 h-1.5 bg-blue-300 rounded-full typing-dot"></div>
+                </div>
+                <span class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">AI 正在組織回答內容...</span>
+            </div>
+
+        </div>
+    </div>
+</main>
+
+<script>
+    // 登入驗證與個人資料初始化
+    const currentUser = Auth.requireLogin();
+    if (currentUser) {
+        document.getElementById('sideUserName').textContent = currentUser.name;
+        document.getElementById('sideUserRole').textContent = currentUser.grade || "學生";
+    }
+
+    const dbKey = 'forum_posts';
+
+    function toggleForm() {
+        const form = document.getElementById('postForm');
+        form.classList.toggle('hidden');
+        if (!form.classList.contains('hidden')) document.getElementById('postTitle').focus();
+    }
+
+    function loadPosts() {
+        const posts = JSON.parse(localStorage.getItem(dbKey) || "[]");
+        const container = document.getElementById('postList');
+        container.innerHTML = '';
+
+        if (posts.length === 0) {
+            renderPost({
+                id: 0, title: "歡迎來到 AI 解題論壇", content: "在這裡您可以詢問任何課業上的疑難雜症，AI 助教將會即時提供解析。",
+                author: "翰林小助教", role: "admin", date: "2025/12/21",
+                reply: { author: "AI 助教", content: "您好！我是您的專屬學習夥伴。請點擊右上方的「我要提問」來開始第一場對話吧！" }
+            });
+        } else {
+            // 最新的貼文顯示在最上面
+            [...posts].reverse().forEach(post => renderPost(post));
+        }
+    }
+
+    function renderPost(post) {
+        const isAIReply = post.reply && (post.reply.author === "AI 助教" || post.reply.author === RealAITutor.name);
+        const userIconColor = post.role === 'admin' ? 'bg-slate-100 text-slate-500' : 'bg-blue-50 text-blue-600';
+        
+        let replyHtml = '';
+        if (post.reply) {
+            const parsedContent = marked.parse(post.reply.content);
+            const replyClass = isAIReply ? 'ai-reply-card' : 'bg-slate-50 border-slate-100';
+            const replyIcon = isAIReply 
+                ? `<div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm shadow-md"><i class="fas fa-robot"></i></div>`
+                : `<div class="w-8 h-8 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center font-bold text-xs">師</div>`;
+            
+            replyHtml = `
+                <div class="mt-4 p-5 rounded-2xl border ${replyClass} flex gap-4 transition-all">
+                    <div class="flex-shrink-0">${replyIcon}</div>
+                    <div class="flex-grow min-w-0">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="font-bold text-sm text-slate-800">${post.reply.author}</span>
+                            ${isAIReply ? '<span class="bg-blue-100 text-blue-700 text-[9px] px-1.5 py-0.5 rounded-md font-black uppercase tracking-tighter">Verified AI</span>' : ''}
                         </div>
-                        <div class="flex-grow">
-                            <h3 class="font-bold text-lg text-gray-800 group-hover:text-blue-600 transition">${post.title}</h3>
-                            <div class="text-xs text-gray-500 flex items-center gap-2 mt-1 mb-2">
-                                <span class="font-bold">${post.author}</span><span>•</span><span>${post.date}</span>
-                            </div>
-                            <p class="text-gray-600 text-sm leading-relaxed">${post.content}</p>
+                        <div class="text-sm text-slate-700 leading-relaxed markdown-body">
+                            ${parsedContent}
                         </div>
                     </div>
-                    ${replyHtml}
                 </div>`;
-            document.getElementById('postList').insertAdjacentHTML('beforeend', html);
+        } else {
+            replyHtml = `<div class="mt-4 flex items-center gap-2 text-[11px] text-slate-400 bg-slate-50 px-4 py-3 rounded-xl border border-slate-100 border-dashed"><i class="far fa-clock"></i> AI 助教正在分析您的問題，請稍候...</div>`;
         }
 
-        async function addPost() {
-            const t = document.getElementById('postTitle').value;
-            const c = document.getElementById('postContent').value;
-            if(!t.trim() || !c.trim()) return alert("請輸入完整標題與內容");
-            
-            const newPost = {
-                id: Date.now(), title: t, content: c, author: currentUser.name, role: "student", date: new Date().toLocaleString(), reply: null
-            };
+        const html = `
+            <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 hover:border-blue-100 transition-all group fade-in">
+                <div class="flex gap-4">
+                    <div class="flex-shrink-0">
+                        <div class="w-10 h-10 rounded-full ${userIconColor} flex items-center justify-center text-lg font-bold border-2 border-white shadow-sm">${post.author[0]}</div>
+                    </div>
+                    <div class="flex-grow min-w-0">
+                        <h3 class="font-bold text-base text-slate-800 group-hover:text-blue-600 transition truncate">${post.title}</h3>
+                        <div class="text-[11px] text-slate-400 flex items-center gap-2 mt-1 mb-3 font-medium">
+                            <span class="text-slate-600 font-bold">${post.author}</span>
+                            <span class="text-slate-200">•</span>
+                            <span>${post.date}</span>
+                        </div>
+                        <p class="text-slate-600 text-sm leading-relaxed">${post.content}</p>
+                    </div>
+                </div>
+                ${replyHtml}
+            </div>`;
+        document.getElementById('postList').insertAdjacentHTML('beforeend', html);
+    }
 
-            const posts = JSON.parse(localStorage.getItem(dbKey) || "[]");
-            posts.push(newPost);
-            localStorage.setItem(dbKey, JSON.stringify(posts));
-            
-            document.getElementById('postTitle').value = '';
-            document.getElementById('postContent').value = '';
-            toggleForm();
-            loadPosts();
+    async function addPost() {
+        const t = document.getElementById('postTitle').value;
+        const c = document.getElementById('postContent').value;
+        if(!t.trim() || !c.trim()) return;
+        
+        const newPost = {
+            id: Date.now(), title: t, content: c, author: currentUser.name, role: "student", date: new Date().toLocaleString(), reply: null
+        };
 
-            // 觸發真 AI
-            const loading = document.getElementById('aiThinking');
-            loading.classList.remove('hidden');
-            const container = document.getElementById('scrollContainer');
-            container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+        const posts = JSON.parse(localStorage.getItem(dbKey) || "[]");
+        posts.push(newPost);
+        localStorage.setItem(dbKey, JSON.stringify(posts));
+        
+        document.getElementById('postTitle').value = '';
+        document.getElementById('postContent').value = '';
+        toggleForm();
+        loadPosts();
 
-            // 呼叫 RealAITutor (直接使用內建 Key)
+        // 啟動 AI 回應邏輯
+        const loading = document.getElementById('aiThinking');
+        loading.classList.remove('hidden');
+        
+        // 呼叫 AI 接口
+        try {
             const aiResponse = await RealAITutor.askGemini(t, c);
             
-            // 儲存回覆
             const updatedPosts = JSON.parse(localStorage.getItem(dbKey) || "[]");
             const targetIndex = updatedPosts.findIndex(p => p.id === newPost.id);
             if (targetIndex !== -1) {
                 updatedPosts[targetIndex].reply = { author: RealAITutor.name, content: aiResponse };
                 localStorage.setItem(dbKey, JSON.stringify(updatedPosts));
             }
-
+        } catch (err) {
+            console.error("AI 回覆出錯", err);
+        } finally {
             loading.classList.add('hidden');
             loadPosts();
         }
+    }
 
-        loadPosts();
-    </script>
+    // 初始加載
+    loadPosts();
+</script>
 </body>
 </html>
