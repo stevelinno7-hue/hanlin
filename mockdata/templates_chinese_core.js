@@ -1,8 +1,17 @@
 (function(global){
     'use strict';
-    const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
-    if (!G) return;
-    const { pick, shuffle } = G.utils;
+
+    // 定義一個啟動函式
+    function init() {
+        const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
+        
+        // 檢查：如果引擎還沒好，就等 100 毫秒後再試一次
+        if (!G || !G.registerTemplate) {
+            setTimeout(init, 100);
+            return;
+        }
+
+        const { pick, shuffle } = G.utils;
 
     // ==========================================
     // 國文科核心資料庫 (Chinese Core Database)
