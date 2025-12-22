@@ -1,12 +1,17 @@
 (function(global){
     'use strict';
+
     function init() {
+        // 1. 檢查引擎是否就緒
         const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
         if (!G || !G.registerTemplate) { setTimeout(init, 100); return; }
         const { pick, shuffle } = G.utils;
 
+        // ==========================================
+        // 生物科資料庫 (Rich DB, 無需 'o' 欄位)
+        // ==========================================
         const bioDB = [
-           // ==========================================
+            // ==========================================
         // 1. 生物 (Biology)
         // ==========================================
         // [國七] 細胞與生物體
@@ -86,16 +91,37 @@
         { s:"生物", t:["高二","生態"], q: "族群成長曲線(S型)的上限", a: "負荷量 (K值)" },
 ];
 
-        G.registerTemplate('bio_basic', (ctx, rnd) => {
+        // 註冊模板：動態誘答邏輯
+        G.registerTemplate('bio_concept', (ctx, rnd) => {
             const item = pick(bioDB);
-            const opts = shuffle([item.a, ...item.o]);
+            
+            // ★★★ 修復關鍵：自動找錯的選項 ★★★
+            // 優先找同單元(tag)的其他答案，若不夠則找全體
+            const sameTagItems = bioDB.filter(x => x.t[1] === item.t[1] && x.a !== item.a);
+            const otherItems = bioDB.filter(x => x.a !== item.a);
+            
+            let wrongOpts = [];
+            if (sameTagItems.length >= 3) {
+                wrongOpts = shuffle(sameTagItems).slice(0, 3).map(x => x.a);
+            } else {
+                wrongOpts = shuffle(otherItems).slice(0, 3).map(x => x.a);
+            }
+
+            // 防呆：萬一資料庫太小，補上預設值
+            while (wrongOpts.length < 3) wrongOpts.push("其他");
+
+            const opts = shuffle([item.a, ...wrongOpts]);
+
             return {
-                question: `【生物】${item.q}`,
-                options: opts, answer: opts.indexOf(item.a), concept: item.t[1],
+                question: `【生物】${item.q}，是指下列何者？`,
+                options: opts,
+                answer: opts.indexOf(item.a),
+                concept: item.t[1],
                 explanation: [`正確答案：${item.a}`]
             };
         }, ["biology", "生物", "自然", "國七", "國八"]);
-        console.log("✅ 生物題庫已載入");
+
+        console.log("✅ 生物題庫 (動態修復版) 已載入。");
     }
     init();
 })(window);
