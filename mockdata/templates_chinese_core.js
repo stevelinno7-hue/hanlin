@@ -1,12 +1,12 @@
-(function (global) {
-  'use strict';
-  function init() {
-    const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
-    if (!G || !G.registerTemplate) { setTimeout(init, 100); return; }
-    const { pick, shuffle } = G.utils;
+(function(global){
+    'use strict';
+    function init() {
+        const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
+        if (!G || !G.registerTemplate) { setTimeout(init, 100); return; }
+        const { pick, shuffle } = G.utils;
 
-    const DB = [
-          // ------------------------------------------
+        const chiData = [
+            // ------------------------------------------
         // 1. 成語判讀 (Idioms)
         // ------------------------------------------
         { q: "白駒過隙", a: "形容時間過得很快", tag: ["國七","成語"] },
@@ -151,26 +151,17 @@
         { q: "壓不扁的玫瑰", a: "楊逵 (抗日精神)", tag: ["高三","現代文"] }
     ];
 
-
-    function makeQuestion(grade) {
-      const pool = DB.filter(x => x.g === grade);
-      if (pool.length < 2) return null;
-      const base = pick(pool);
-      const wrong = shuffle(DB.filter(x => x.a !== base.a).map(x => x.a)).slice(0, 3);
-      const options = shuffle([base.a, ...wrong]);
-
-      return {
-        question: `【國文｜${grade}｜${base.c}】「${base.q}」的意思是？`,
-        options,
-        answer: options.indexOf(base.a),
-        concept: base.c,
-        explanation: [`正確答案：${base.a}`]
-      };
+        G.registerTemplate('chi_basic', (ctx, rnd) => {
+            const item = pick(chiData);
+            const wrong = shuffle(chiData.filter(x => x.a !== item.a)).slice(0, 3).map(x => x.a);
+            const opts = shuffle([item.a, ...wrong]);
+            return {
+                question: `【國文】「${item.q}」的意思或作者是？`,
+                options: opts, answer: opts.indexOf(item.a), concept: item.tag[1],
+                explanation: [`答案：${item.a}`]
+            };
+        }, ["chinese", "國文", "國七", "國八", "國九", "高一"]);
+        console.log("✅ 國文題庫已載入");
     }
-
-    ["國七", "國八", "國九", "高一", "高二", "高三"].forEach(g => {
-      G.registerTemplate(`chinese_${g}`, () => makeQuestion(g), ["chinese", "國文", g]);
-    });
-  }
-  init();
-})(this);
+    init();
+})(window);
