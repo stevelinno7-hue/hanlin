@@ -1,12 +1,63 @@
-(function (global) {
-  'use strict';
-  function init() {
-    const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
-    if (!G || !G.registerTemplate) { setTimeout(init, 100); return; }
-    const { pick, shuffle } = G.utils;
+(function(global){
+    'use strict';
 
-    const db = [
-       // ==========================================
+    function init() {
+        const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
+        if (!G || !G.registerTemplate) { setTimeout(init, 100); return; }
+        const { pick, shuffle } = G.utils;
+
+        // ==========================================
+        // 化學與地科資料庫 (Rich DB)
+        // ==========================================
+        const scienceDB = [
+         
+// ==========================================
+        // 2. 地球科學 (Earth Science)
+        // ==========================================
+        // [國九] 天文
+        { s:"地科", t:["國九","天文"], q: "地球自轉造成的現象", a: "晝夜交替" },
+        { s:"地科", t:["國九","天文"], q: "地球公轉造成的現象", a: "四季變化" },
+        { s:"地科", t:["國九","天文"], q: "太陽系最大的行星", a: "木星" },
+        { s:"地科", t:["國九","天文"], q: "類地行星特徵", a: "體積小、密度大、岩石組成" },
+        { s:"地科", t:["國九","天文"], q: "類木行星特徵", a: "體積大、密度小、氣體組成" },
+        { s:"地科", t:["國九","天文"], q: "月相變化的週期", a: "約 29.5 天 (朔望月)" },
+        { s:"地科", t:["國九","天文"], q: "日食發生的農曆日期", a: "朔 (初一)" },
+        { s:"地科", t:["國九","天文"], q: "月食發生的農曆日期", a: "望 (十五)" },
+        { s:"地科", t:["國九","天文"], q: "織女星屬於", a: "恆星" },
+        { s:"地科", t:["國九","天文"], q: "光年是單位的", a: "距離" },
+
+        // [國九] 地質
+        { s:"地科", t:["國九","地質"], q: "板塊構造運動的動力來源", a: "地函熱對流" },
+        { s:"地科", t:["國九","地質"], q: "台灣位於哪兩板塊交界", a: "歐亞板塊與菲律賓海板塊" },
+        { s:"地科", t:["國九","地質"], q: "聚合性板塊邊界特徵", a: "海溝、火山、造山運動" },
+        { s:"地科", t:["國九","地質"], q: "張裂性板塊邊界特徵", a: "中洋脊、裂谷" },
+        { s:"地科", t:["國九","地質"], q: "花岡岩屬於", a: "火成岩" },
+        { s:"地科", t:["國九","地質"], q: "大理岩屬於", a: "變質岩" },
+        { s:"地科", t:["國九","地質"], q: "石灰岩屬於", a: "沈積岩" },
+        { s:"地科", t:["國九","地質"], q: "地震規模的定義", a: "釋放能量的多寡" },
+        { s:"地科", t:["國九","地質"], q: "地震震度的定義", a: "地面搖晃的程度" },
+
+        // [國九] 大氣與海洋
+        { s:"地科", t:["國九","大氣"], q: "天氣現象發生的那一層", a: "對流層" },
+        { s:"地科", t:["國九","大氣"], q: "臭氧層所在位置", a: "平流層" },
+        { s:"地科", t:["國九","大氣"], q: "大氣中含量最多的氣體", a: "氮氣" },
+        { s:"地科", t:["國九","大氣"], q: "造成溫室效應的主要氣體", a: "二氧化碳、甲烷、水氣" },
+        { s:"地科", t:["國九","大氣"], q: "高氣壓中心的氣流", a: "下沉、順時針旋轉(北半球)" },
+        { s:"地科", t:["國九","大氣"], q: "低氣壓中心的氣流", a: "上升、逆時針旋轉(北半球)" },
+        { s:"地科", t:["國九","大氣"], q: "冷鋒通過時的天氣", a: "氣溫下降、降雨" },
+        { s:"地科", t:["國九","海洋"], q: "造成潮汐的主因", a: "月球與太陽的引力" },
+        { s:"地科", t:["國九","海洋"], q: "黑潮是", a: "暖流" },
+
+        // [高中] 進階地科
+        { s:"地科", t:["高一","天文"], q: "宇宙背景輻射證明了", a: "大霹靂理論" },
+        { s:"地科", t:["高一","天文"], q: "哈伯定律描述", a: "宇宙正在膨脹" },
+        { s:"地科", t:["高一","天文"], q: "星等數值越小", a: "亮度越亮" },
+        { s:"地科", t:["高一","地質"], q: "絕對地質年代測定", a: "放射性元素定年法" },
+        { s:"地科", t:["高一","氣候"], q: "聖嬰現象特徵", a: "東太平洋海水異常增溫" },
+        { s:"地科", t:["高一","氣候"], q: "科氏力在北半球", a: "向右偏轉" },
+        { s:"地科", t:["高一","海洋"], q: "溫鹽環流的驅動力", a: "密度差異(溫度與鹽度)" },
+
+    // ==========================================
         // 4. 化學 (Chemistry)
         // ==========================================
         // [國八] 物質與反應
@@ -56,18 +107,34 @@
         { s:"化學", t:["高二","平衡"], q: "勒沙特列原理", a: "平衡移動以抵銷外加因素" },
         { s:"化學", t:["高二","酸鹼"], q: "緩衝溶液", a: "能抵抗pH值劇烈變化的溶液" }
     ];
+        // 註冊模板
+        G.registerTemplate('science_dynamic', (ctx, rnd) => {
+            const item = pick(scienceDB);
+            
+            // 動態誘答：優先找同科目的錯誤答案
+            const sameSubject = scienceDB.filter(x => x.s === item.s && x.a !== item.a);
+            const others = scienceDB.filter(x => x.a !== item.a);
+            
+            let wrongOpts = [];
+            if (sameSubject.length >= 3) {
+                wrongOpts = shuffle(sameSubject).slice(0, 3).map(x => x.a);
+            } else {
+                wrongOpts = shuffle(others).slice(0, 3).map(x => x.a);
+            }
+            while(wrongOpts.length < 3) wrongOpts.push("其他");
 
-    G.registerTemplate('chemistry_core', (ctx) => {
-      const pool = (ctx && ctx.tags) ? db.filter(item => ctx.tags.includes(item.t[0])) : db;
-      const base = pick(pool);
-      const wrong = shuffle(db.filter(x => x.a !== base.a)).slice(0, 3).map(x => x.a);
-      const opts = shuffle([base.a, ...wrong]);
-      return {
-        question: `【化學｜${base.t[1]}】${base.q}？`,
-        options: opts, answer: opts.indexOf(base.a),
-        concept: base.t[1]
-      };
-    }, ["chemistry", "化學", "自然"]);
-  }
-  init();
-})(this);
+            const opts = shuffle([item.a, ...wrongOpts]);
+
+            return {
+                question: `【${item.s}】${item.q}`,
+                options: opts,
+                answer: opts.indexOf(item.a),
+                concept: item.t[1],
+                explanation: [`正確答案：${item.a}`]
+            };
+        }, ["chemistry", "化學", "earth", "地科", "自然", "國八", "國九"]);
+
+        console.log("✅ 化學/地科題庫 (動態修復版) 已載入。");
+    }
+    init();
+})(window);
