@@ -1,12 +1,15 @@
-(function (global) {
-  'use strict';
-  function init() {
-    const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
-    if (!G || !G.registerTemplate) { setTimeout(init, 100); return; }
-    const { pick, shuffle } = G.utils;
+(function(global){
+    'use strict';
 
-    const db = [
-      // ----------------------------------------------------
+    function init() {
+        // 1. 等待機制
+        const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
+        if (!G || !G.registerTemplate) { setTimeout(init, 100); return; }
+        const { pick, shuffle } = G.utils;
+
+        // 2. 歷史資料庫 (從你的 socialDB 提取)
+        const historyDB = [
+          // ----------------------------------------------------
         // [歷史 - 台灣史] (Prehistory ~ Modern)
         // ----------------------------------------------------
         { s:"歷史", t:["國七","台灣史"], e:"長濱文化", y:"舊石器時代", p:"早期人類", k:"八仙洞", d:"台灣已知最早的史前文化，以敲打石器為主，已知用火" },
@@ -81,30 +84,24 @@
         { s:"歷史", t:["國九","世界史"], e:"第一次世界大戰", y:"1914-1918", p:"威廉二世", k:"壕溝戰", d:"奧匈帝國皇儲被刺引爆，同盟國與協約國對抗" },
         { s:"歷史", t:["國九","世界史"], e:"經濟大恐慌", y:"1929", p:"羅斯福", k:"新政", d:"華爾街股市崩盤引發全球經濟衰退" },
         { s:"歷史", t:["國九","世界史"], e:"第二次世界大戰", y:"1939-1945", p:"希特勒", k:"軸心國", d:"德國入侵波蘭引爆，人類史上最大規模戰爭" },
-        { s:"歷史", t:["國九","世界史"], e:"冷戰", y:"1947-1991", p:"美蘇", k:"鐵幕", d:"資本主義與共產主義兩大陣營的對抗" }
+        { s:"歷史", t:["國九","世界史"], e:"冷戰", y:"1947-1991", p:"美蘇", k:"鐵幕", d:"資本主義與共產主義兩大陣營的對抗" },
 
+        
     ];
 
-    G.registerTemplate('history_core', (ctx) => {
-      // 安全篩選：檢查 ctx 是否指定年級
-      let pool = db;
-      if (ctx && ctx.tags) {
-        const targetGrade = ctx.tags.find(t => t.includes("國") || t.includes("高"));
-        if (targetGrade) pool = db.filter(item => item.t[0] === targetGrade);
-      }
-      
-      if (pool.length === 0) pool = db; 
-      const item = pick(pool);
-      const wrong = shuffle(db.filter(x => x.a !== item.a)).slice(0, 3).map(x => x.a);
-      const opts = shuffle([item.a, ...wrong]);
+        // 3. 註冊模板 (歷史特徵題)
+        G.registerTemplate('his_feat', (ctx, rnd) => {
+            const item = pick(historyDB);
+            const wrong = shuffle(historyDB.filter(x => x !== item)).slice(0, 3).map(x => x.y);
+            const opts = shuffle([item.y, ...wrong]);
+            return {
+                question: `【${item.s}】關於「${item.e}」，下列何者為其關鍵特徵或年代？`,
+                options: opts, answer: opts.indexOf(item.y), concept: item.t[1],
+                explanation: [`${item.e}：${item.d}`]
+            };
+        }, ["history", "歷史", "社會", "國七", "國八", "國九"]);
 
-      return {
-        question: `【歷史｜${item.t[1]}】關於「${item.e}」，下列敘述何者正確？`,
-        options: opts,
-        answer: opts.indexOf(item.a),
-        concept: item.e
-      };
-    }, ["history", "歷史", "社會"]);
-  }
-  init();
-})(this);
+        console.log("✅ 歷史題庫已載入完成。");
+    }
+    init();
+})(window);
