@@ -1,12 +1,12 @@
-(function (global) {
-  'use strict';
-  function init() {
-    const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
-    if (!G || !G.registerTemplate) { setTimeout(init, 100); return; }
-    const { pick, shuffle } = G.utils;
+(function(global){
+    'use strict';
+    function init() {
+        const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
+        if (!G || !G.registerTemplate) { setTimeout(init, 100); return; }
+        const { pick, shuffle } = G.utils;
 
-    const db = [
-     // ==========================================
+        const bioDB = [
+           // ==========================================
         // 1. 生物 (Biology)
         // ==========================================
         // [國七] 細胞與生物體
@@ -84,21 +84,18 @@
         { s:"生物", t:["高二","生理"], q: "神經元傳導方向", a: "樹突 -> 本體 -> 軸突" },
         { s:"生物", t:["高二","生理"], q: "特異性免疫的主角", a: "淋巴球 (B細胞/T細胞)" },
         { s:"生物", t:["高二","生態"], q: "族群成長曲線(S型)的上限", a: "負荷量 (K值)" },
+];
 
-    ];
-
-    G.registerTemplate('biology_core', (ctx) => {
-      const pool = (ctx && ctx.tags) ? db.filter(item => ctx.tags.includes(item.t[0])) : db;
-      if (pool.length < 1) return null;
-      const base = pick(pool);
-      const wrong = shuffle(db.filter(x => x.a !== base.a)).slice(0, 3).map(x => x.a);
-      const opts = shuffle([base.a, ...wrong]);
-      return {
-        question: `【生物｜${base.t[1]}】${base.q}？`,
-        options: opts, answer: opts.indexOf(base.a),
-        concept: base.t[1]
-      };
-    }, ["biology", "生物", "自然"]);
-  }
-  init();
-})(this);
+        G.registerTemplate('bio_basic', (ctx, rnd) => {
+            const item = pick(bioDB);
+            const opts = shuffle([item.a, ...item.o]);
+            return {
+                question: `【生物】${item.q}`,
+                options: opts, answer: opts.indexOf(item.a), concept: item.t[1],
+                explanation: [`正確答案：${item.a}`]
+            };
+        }, ["biology", "生物", "自然", "國七", "國八"]);
+        console.log("✅ 生物題庫已載入");
+    }
+    init();
+})(window);
