@@ -126,21 +126,20 @@
         }
 
         // ----------------------------------------------
-        // 🎯 註冊：歷史活潑版題目 (with Image Triggers)
+        // 🎯 註冊：歷史活潑版題目（可指定年級）
         // ----------------------------------------------
-        G.registerTemplate('his_feat', (ctx, rnd) => {
-            const item = pick(historyDB);
-            const { options, answer } = generateHistoryOptions_Safe(G, historyDB, item, 'y');
-            
-            // Logic to determine a relevant image query
-            let imageTag = "";
-            if (item.t[1] === "台灣史") {
-                 imageTag = ``;
-            } else if (item.t[1] === "中國史") {
-                 imageTag = ``;
-            } else {
-                 imageTag = ``;
+        G.registerTemplate('his_feat', (ctx, rnd, grade="國七") => {
+            // 篩選指定年級的題庫
+            const targetDB = historyDB.filter(item => item.t.includes(grade));
+            if (targetDB.length === 0) {
+                return { question: `⚠️ 沒有 ${grade} 的歷史題目資料！`, options: [], answer: -1, concept: "", explanation: [] };
             }
+
+            const item = pick(targetDB);
+            const { options, answer } = generateHistoryOptions_Safe(G, targetDB, item, 'y');
+
+            // 可加圖片查詢（可留空）
+            let imageTag = "";
 
             return {
                 question: pick(askTemplates)(item),
@@ -152,12 +151,13 @@
                     `📌 時代：${item.y}`,
                     `📌 關鍵詞：${item.k}`,
                     `📌 解說：${item.d}`,
-                    imageTag // Injecting the image tag here for educational reinforcement
+                    imageTag
                 ]
             };
         }, ["history", "歷史", "社會", "國七", "國八", "國九"]);
 
-        console.log("🌟 歷史題庫（活潑 + 嚴格去重 + 圖解版）已載入！");
+        console.log("🌟 歷史題庫（活潑 + 嚴格去重 + 可指定年級）已載入！");
     }
+
     init();
 })(window);
