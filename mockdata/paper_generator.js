@@ -71,7 +71,7 @@
             
             try { 
                 // ★★★ 關鍵修復：必須傳入 context 物件 (包含 tags) ★★★
-                // 之前的錯誤是因為只傳了 tid，導致模板裡的 ctx 是 undefined
+                // 之前的錯誤是因為只傳了 tid，導致模板裡的 ctx 是 undefined，歷史科因此崩潰
                 const q = G.generateQuestion(tid, { tags: tags });
                 if (q) questions.push(q);
             } catch (e) { 
