@@ -1,7 +1,9 @@
 (function (global) {
     'use strict';
 
+    // -----------------------------
     // 等待引擎就緒
+    // -----------------------------
     function waitForEngine(callback) {
         const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
         if (!G || !G.registerTemplate) {
@@ -11,9 +13,12 @@
         callback(G);
     }
 
-    // 公民核心資料庫 (完整保留你的資料)
+    // -----------------------------
+    // 公民核心資料庫
+    // -----------------------------
     function buildCivicsDB() {
         return [
+           
     { s:"公民", t:["國七","社會"], e:"性別刻板印象", y:"偏見", p:"文化", k:"男主外", d:"對特定性別抱持固定的看法或期望" },
     { s:"公民", t:["國七","社會"], e:"家庭功能", y:"社會化", p:"教育", k:"生育", d:"家庭教導子女社會規範與價值觀的過程" },
 
@@ -199,122 +204,88 @@
 
     }
 
-    // ----------------------------------------------------
-    // 通用選項生成器 (核心修復邏輯 + 變數隔離)
-    // ----------------------------------------------------
-    function generateStrictOptions_Civics(G, db, item, field) {
+    // -----------------------------
+    // 通用選項生成器
+    // -----------------------------
+    function generateOptions(G, db, item, field) {
         const { shuffle } = G.utils;
-        const correctAns = item[field].trim();
-        
-        const selected = new Set();
-        selected.add(correctAns);
+        const correct = item[field].trim();
+        const selected = new Set([correct]);
         const wrongOpts = [];
 
-        // 策略 A: 優先找「同單元」(t[1]，例如都是政治) 的錯誤答案
-        const sameType = shuffle(db.filter(x => x.t[1] === item.t[1]));
-        for(const cand of sameType) {
+        // 策略 A: 同單元優先
+        const sameUnit = shuffle(db.filter(x => x.t[1] === item.t[1]));
+        for (const cand of sameUnit) {
             const txt = cand[field].trim();
-            if(!selected.has(txt)) {
+            if (!selected.has(txt)) {
                 wrongOpts.push(txt);
                 selected.add(txt);
             }
-            if(wrongOpts.length >= 3) break;
+            if (wrongOpts.length >= 3) break;
         }
 
         // 策略 B: 全域補足
-        if(wrongOpts.length < 3) {
+        if (wrongOpts.length < 3) {
             const all = shuffle(db);
-            for(const cand of all) {
+            for (const cand of all) {
                 const txt = cand[field].trim();
-                if(!selected.has(txt)) {
+                if (!selected.has(txt)) {
                     wrongOpts.push(txt);
                     selected.add(txt);
                 }
-                if(wrongOpts.length >= 3) break;
+                if (wrongOpts.length >= 3) break;
             }
         }
 
-        const finalOpts = shuffle([correctAns, ...wrongOpts]);
-        return {
-            options: finalOpts,
-            answer: finalOpts.indexOf(correctAns)
+        const finalOpts = shuffle([correct, ...wrongOpts]);
+        return { options: finalOpts, answer: finalOpts.indexOf(correct) };
+    }
+
+    // -----------------------------
+    // 註冊題目模板
+    // -----------------------------
+    function registerTemplates(G, civicsDB) {
+        const { pick } = G.utils;
+
+        // 填空題
+        G.registerTemplate("fillBlank", (item) => {
+            const opts = generateOptions(G, civicsDB, item, "d");
+            return {
+                question: `請選出以下描述對應的概念：「${item.d}」`,
+                options: opts.options,
+                answer: opts.answer,
+                meta: { subject: item.s, grade: item.t[0], unit: item.t[1], keyword: item.k }
+            };
+        });
+
+        // 關鍵詞配對題
+        G.registerTemplate("keywordMatch", (item) => {
+            const opts = generateOptions(G, civicsDB, item, "k");
+            return {
+                question: `下列哪一個關鍵詞最符合描述：「${item.d}」`,
+                options: opts.options,
+                answer: opts.answer,
+                meta: { subject: item.s, grade: item.t[0], unit: item.t[1], explanation: item.e }
+            };
+        });
+
+        // 依年級生成題目
+        G.generateCivicsQuestion = (grade) => {
+            const candidates = civicsDB.filter(x => x.t[0] === grade);
+            if (!candidates.length) return null;
+            const item = pick(candidates);
+            const template = pick(["fillBlank", "keywordMatch"]);
+            return G.generate(template, item);
         };
     }
 
-    // 註冊模板
-    function registerCivicsTemplates(G, civicsDB) {
-        const { pick } = G.utils;
-
-        // 定義所有可能的年級標籤
-        const allGrades = ["國七", "國八", "國九", "高一", "高二", "高三"];
-
-        // 輔助函式：根據使用者標籤過濾題目
-        function filterByGrade(db, userTags) {
-            // 找出使用者選了哪個年級 (例如 ["公民", "國七"] -> "國七")
-            const targetGrade = userTags.find(tag => allGrades.includes(tag));
-            
-            if (targetGrade) {
-                // 如果有指定年級，只回傳該年級的題目
-                const filtered = db.filter(item => item.t[0] === targetGrade);
-                // 防呆：萬一該年級沒題目，回傳全部以免當機
-                return filtered.length > 0 ? filtered : db;
-            }
-            // 沒指定年級 (例如只選 "公民")，回傳全部
-            return db;
-        }
-
-        // 1. 公民特徵題 (考 item.y)
-        G.registerTemplate('civics_feat', (ctx) => {
-            // ★ 關鍵修改：先過濾題目
-            const validDB = filterByGrade(civicsDB, ctx.tags || []);
-            const item = pick(validDB);
-            
-            // 選項生成時，建議還是從全資料庫找錯誤選項，這樣誘答性更強且不至於選項不足
-            // (除非你希望錯誤選項也嚴格限制在該年級，那把下面的 civicsDB 改成 validDB 即可)
-            const { options, answer } = generateStrictOptions_Civics(G, civicsDB, item, 'y');
-
-            // 決定是否加入圖示
-            let imageTag = "";
-            if (item.t[1] === "政治") imageTag = ``;
-            else if (item.t[1] === "法律") imageTag = ``;
-            else if (item.t[1] === "經濟") imageTag = ``;
-
-            return {
-                question: `【公民】關於「${item.e}」，下列敘述何者正確？`,
-                options: options,
-                answer: answer,
-                concept: item.t[1],
-                explanation: [
-                    `正確答案：${item.y}`, 
-                    `詳細說明：${item.d}`,
-                    imageTag
-                ]
-            };
-        }, ["civics", "公民", "社會", "國七", "國八", "國九", "高一", "高二", "高三"]);
-
-        // 2. 公民關鍵字題 (考 item.k)
-        G.registerTemplate('civics_key', (ctx) => {
-            // ★ 關鍵修改：先過濾題目
-            const validDB = filterByGrade(civicsDB, ctx.tags || []);
-            const item = pick(validDB);
-            
-            const { options, answer } = generateStrictOptions_Civics(G, civicsDB, item, 'k');
-
-            return {
-                question: `【公民】提到「${item.e}」，最常聯想到哪個概念？`,
-                options: options,
-                answer: answer,
-                concept: item.t[1],
-                explanation: [`${item.e} 關鍵詞：${item.k}`, `相關概念：${item.p}`]
-            };
-        }, ["civics", "公民", "社會", "國七", "國八", "國九", "高一", "高二", "高三"]);
-    }
-
-    // 初始化
-    waitForEngine(G => {
+    // -----------------------------
+    // 初始化題庫
+    // -----------------------------
+    waitForEngine((G) => {
         const civicsDB = buildCivicsDB();
-        registerCivicsTemplates(G, civicsDB);
-        console.log("⚖️ 公民題庫（年級鎖定 + 嚴格去重版）已載入！");
+        registerTemplates(G, civicsDB);
+        console.log("✅ 公民題庫模板已註冊完成");
     });
 
 })(window);
