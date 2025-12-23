@@ -2,6 +2,7 @@
     'use strict';
 
     function init() {
+        // 1. 檢查引擎是否就緒 (等待機制)
         const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
         if (!G || !G.registerTemplate) { setTimeout(init, 100); return; }
         const { pick, shuffle } = G.utils;
@@ -94,60 +95,42 @@
             { s:"化學", t:["高二","平衡"], q: "勒沙特列原理", a: "平衡移動以抵銷外加因素" },
             { s:"化學", t:["高二","酸鹼"], q: "緩衝溶液", a: "能抵抗pH值劇烈變化的溶液" }
         ];
-        ];
 
-        // ----------------------
-        // 年級分池
-        // ----------------------
-        const grades = ["國八","國九","高一","高二","高三"];
-        const gradePools = {};
+        // 註冊模板：動態誘答邏輯 (地科與化學共用)
+        G.registerTemplate('science_dynamic', (ctx, rnd) => {
+            const item = pick(scienceDB);
+            
+            // 誘答策略：
+            // 1. 優先找同科目 (s)
+            // 2. 且同單元 (t[1]) 的錯誤選項
+            const sameTag = scienceDB.filter(x => x.s === item.s && x.t[1] === item.t[1] && x.a !== item.a);
+            const sameSubject = scienceDB.filter(x => x.s === item.s && x.a !== item.a);
+            
+            let wrongOpts = [];
+            if (sameTag.length >= 3) {
+                wrongOpts = shuffle(sameTag).slice(0, 3).map(x => x.a);
+            } else {
+                wrongOpts = shuffle(sameSubject).slice(0, 3).map(x => x.a);
+            }
 
-        grades.forEach(g => {
-            gradePools[g] = scienceDB
-                .filter(item => item.t[0] === g)
-                .map(item => {
-                    const correctAns = item.a.trim();
-                    const selectedAnswers = new Set([correctAns]);
-                    const wrongOptions = [];
+            // 防呆：如果選項不夠，補上通用選項
+            while(wrongOpts.length < 3) wrongOpts.push("其他");
 
-                    // 優先同科目
-                    const sameSubjectCandidates = shuffle(scienceDB.filter(x => x.s === item.s && x.a.trim() !== correctAns));
-                    for (const cand of sameSubjectCandidates) {
-                        const candAns = cand.a.trim();
-                        if (!selectedAnswers.has(candAns)) {
-                            wrongOptions.push(candAns);
-                            selectedAnswers.add(candAns);
-                        }
-                        if (wrongOptions.length >= 3) break;
-                    }
+            const opts = shuffle([item.a, ...wrongOpts]);
 
-                    // 補足全庫
-                    if (wrongOptions.length < 3) {
-                        const allCandidates = shuffle(scienceDB);
-                        for (const cand of allCandidates) {
-                            const candAns = cand.a.trim();
-                            if (!selectedAnswers.has(candAns)) {
-                                wrongOptions.push(candAns);
-                                selectedAnswers.add(candAns);
-                            }
-                            if (wrongOptions.length >= 3) break;
-                        }
-                    }
+            return {
+                question: `【${item.s}】${item.q}，是指下列何者？`,
+                options: opts,
+                answer: opts.indexOf(item.a),
+                concept: item.t[1], // 單元名稱 (如：天文、原子)
+                explanation: [`正確答案：${item.a}`]
+            };
+        }, ["chemistry", "化學", "earth", "地科", "地球科學", "自然", "國八", "國九", "高一", "高二"]);
 
-                    const finalOptions = shuffle([correctAns, ...wrongOptions]);
-                    return {
-                        question: `【${item.s}】${item.q}`,
-                        options: finalOptions,
-                        answer: finalOptions.indexOf(correctAns),
-                        concept: item.t[1],
-                        grade: item.t[0],
-                        explanation: [`正確答案：${item.a}`]
-                    };
-                });
-        });
+        console.log("✅ 化學與地科題庫 (完整版) 已載入。");
+    }
 
-        console.log("✅ 年級分池題庫已生成", gradePools);
-
+    // 啟動！
     init();
-})(window);
 
+})(window);
