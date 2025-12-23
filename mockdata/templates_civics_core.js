@@ -11,10 +11,9 @@
         callback(G);
     }
 
-    // 公民核心資料庫
+    // 公民核心資料庫 (完整保留你的資料)
     function buildCivicsDB() {
         return [
-       
     { s:"公民", t:["國七","社會"], e:"性別刻板印象", y:"偏見", p:"文化", k:"男主外", d:"對特定性別抱持固定的看法或期望" },
     { s:"公民", t:["國七","社會"], e:"家庭功能", y:"社會化", p:"教育", k:"生育", d:"家庭教導子女社會規範與價值觀的過程" },
 
@@ -201,21 +200,17 @@
     }
 
     // ----------------------------------------------------
-    // 通用選項生成器 (核心修復邏輯)
-    // db: 資料庫
-    // item: 當前題目物件
-    // field: 要取用的欄位 ('y' 或 'k')
+    // 通用選項生成器 (核心修復邏輯 + 變數隔離)
     // ----------------------------------------------------
-    function generateStrictOptions(G, db, item, field) {
+    function generateStrictOptions_Civics(G, db, item, field) {
         const { shuffle } = G.utils;
         const correctAns = item[field].trim();
         
-        // 使用 Set 去重
         const selected = new Set();
         selected.add(correctAns);
         const wrongOpts = [];
 
-        // 策略 A: 同類型 (tag[1]) 優先
+        // 策略 A: 優先找「同單元」(t[1]，例如都是政治) 的錯誤答案
         const sameType = shuffle(db.filter(x => x.t[1] === item.t[1]));
         for(const cand of sameType) {
             const txt = cand[field].trim();
@@ -250,26 +245,60 @@
     function registerCivicsTemplates(G, civicsDB) {
         const { pick } = G.utils;
 
+        // 定義所有可能的年級標籤
+        const allGrades = ["國七", "國八", "國九", "高一", "高二", "高三"];
+
+        // 輔助函式：根據使用者標籤過濾題目
+        function filterByGrade(db, userTags) {
+            // 找出使用者選了哪個年級 (例如 ["公民", "國七"] -> "國七")
+            const targetGrade = userTags.find(tag => allGrades.includes(tag));
+            
+            if (targetGrade) {
+                // 如果有指定年級，只回傳該年級的題目
+                const filtered = db.filter(item => item.t[0] === targetGrade);
+                // 防呆：萬一該年級沒題目，回傳全部以免當機
+                return filtered.length > 0 ? filtered : db;
+            }
+            // 沒指定年級 (例如只選 "公民")，回傳全部
+            return db;
+        }
+
         // 1. 公民特徵題 (考 item.y)
-        G.registerTemplate('civics_feat', () => {
-            const item = pick(civicsDB);
-            // 呼叫嚴格生成器，針對 'y' 欄位
-            const { options, answer } = generateStrictOptions(G, civicsDB, item, 'y');
+        G.registerTemplate('civics_feat', (ctx) => {
+            // ★ 關鍵修改：先過濾題目
+            const validDB = filterByGrade(civicsDB, ctx.tags || []);
+            const item = pick(validDB);
+            
+            // 選項生成時，建議還是從全資料庫找錯誤選項，這樣誘答性更強且不至於選項不足
+            // (除非你希望錯誤選項也嚴格限制在該年級，那把下面的 civicsDB 改成 validDB 即可)
+            const { options, answer } = generateStrictOptions_Civics(G, civicsDB, item, 'y');
+
+            // 決定是否加入圖示
+            let imageTag = "";
+            if (item.t[1] === "政治") imageTag = ``;
+            else if (item.t[1] === "法律") imageTag = ``;
+            else if (item.t[1] === "經濟") imageTag = ``;
 
             return {
                 question: `【公民】關於「${item.e}」，下列敘述何者正確？`,
                 options: options,
                 answer: answer,
                 concept: item.t[1],
-                explanation: [`正確答案：${item.y}`, `詳細說明：${item.d}`]
+                explanation: [
+                    `正確答案：${item.y}`, 
+                    `詳細說明：${item.d}`,
+                    imageTag
+                ]
             };
-        }, ["civics", "公民", "社會", "國七", "國八", "國九", "高一"]);
+        }, ["civics", "公民", "社會", "國七", "國八", "國九", "高一", "高二", "高三"]);
 
         // 2. 公民關鍵字題 (考 item.k)
-        G.registerTemplate('civics_key', () => {
-            const item = pick(civicsDB);
-            // 呼叫嚴格生成器，針對 'k' 欄位
-            const { options, answer } = generateStrictOptions(G, civicsDB, item, 'k');
+        G.registerTemplate('civics_key', (ctx) => {
+            // ★ 關鍵修改：先過濾題目
+            const validDB = filterByGrade(civicsDB, ctx.tags || []);
+            const item = pick(validDB);
+            
+            const { options, answer } = generateStrictOptions_Civics(G, civicsDB, item, 'k');
 
             return {
                 question: `【公民】提到「${item.e}」，最常聯想到哪個概念？`,
@@ -278,14 +307,14 @@
                 concept: item.t[1],
                 explanation: [`${item.e} 關鍵詞：${item.k}`, `相關概念：${item.p}`]
             };
-        }, ["civics", "公民", "社會", "國七", "國八", "國九", "高一"]);
+        }, ["civics", "公民", "社會", "國七", "國八", "國九", "高一", "高二", "高三"]);
     }
 
     // 初始化
     waitForEngine(G => {
         const civicsDB = buildCivicsDB();
         registerCivicsTemplates(G, civicsDB);
-        console.log("⚖️ 公民題庫（嚴格去重版）已載入！");
+        console.log("⚖️ 公民題庫（年級鎖定 + 嚴格去重版）已載入！");
     });
 
 })(window);
