@@ -1,6 +1,7 @@
 (function (global) {
     'use strict';
 
+    // 等待引擎就緒
     function waitForEngine(callback) {
         const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
         if (!G || !G.registerTemplate) {
@@ -10,6 +11,7 @@
         callback(G);
     }
 
+    // 地理核心資料庫
     function buildGeoDB() {
         return [
             // 國七 台灣地理
@@ -41,34 +43,78 @@
         ];
     }
 
-    function registerTemplates(G, geoDB) {
-        const { pick, shuffle } = G.utils;
+    // ----------------------------------------------------
+    // 通用選項生成器 (針對地理科優化)
+    // ----------------------------------------------------
+    function generateStrictOptions(G, db, item, field) {
+        const { shuffle } = G.utils;
+        const correctAns = item[field].trim();
+        
+        // 1. 使用 Set 去重，放入正確答案
+        const selected = new Set();
+        selected.add(correctAns);
+        const wrongOpts = [];
 
-        // 地理特徵題
+        // 2. 策略 A: 優先找「同單元」(t[1]) 的錯誤答案 (例如都是地形)
+        // 這樣誘答力較高，不會出現問地形卻出現氣候的選項
+        const sameTag = shuffle(db.filter(x => x.t[1] === item.t[1]));
+        for(const cand of sameTag) {
+            const txt = cand[field].trim();
+            if(!selected.has(txt)) {
+                wrongOpts.push(txt);
+                selected.add(txt);
+            }
+            if(wrongOpts.length >= 3) break;
+        }
+
+        // 3. 策略 B: 如果同單元題目太少，從全域補足
+        if(wrongOpts.length < 3) {
+            const all = shuffle(db);
+            for(const cand of all) {
+                const txt = cand[field].trim();
+                if(!selected.has(txt)) {
+                    wrongOpts.push(txt);
+                    selected.add(txt);
+                }
+                if(wrongOpts.length >= 3) break;
+            }
+        }
+
+        // 4. 組合並回傳
+        const finalOpts = shuffle([correctAns, ...wrongOpts]);
+        return {
+            options: finalOpts,
+            answer: finalOpts.indexOf(correctAns)
+        };
+    }
+
+    // 註冊模板
+    function registerTemplates(G, geoDB) {
+        const { pick } = G.utils;
+
+        // 1. 地理特徵題 (考 item.y)
         G.registerTemplate('geo_feat', () => {
             const item = pick(geoDB);
-            const wrong = shuffle(geoDB.filter(x => x !== item)).slice(0, 3).map(x => x.y);
-            const opts = shuffle([item.y, ...wrong]);
+            const { options, answer } = generateStrictOptions(G, geoDB, item, 'y');
 
             return {
                 question: `【地理】關於「${item.e}」，下列敘述何者正確？`,
-                options: opts,
-                answer: opts.indexOf(item.y),
+                options: options,
+                answer: answer,
                 concept: item.t[1],
                 explanation: [`正確答案：${item.y}`, `說明：${item.d}`]
             };
         }, ["geography", "地理", "社會", "國七", "國八", "國九", "高一"]);
 
-        // 地理關鍵字題
+        // 2. 地理關鍵字題 (考 item.k)
         G.registerTemplate('geo_key', () => {
             const item = pick(geoDB);
-            const wrong = shuffle(geoDB.filter(x => x !== item)).slice(0, 3).map(x => x.k);
-            const opts = shuffle([item.k, ...wrong]);
+            const { options, answer } = generateStrictOptions(G, geoDB, item, 'k');
 
             return {
                 question: `【地理】提到「${item.e}」，通常會聯想到哪個關鍵詞？`,
-                options: opts,
-                answer: opts.indexOf(item.k),
+                options: options,
+                answer: answer,
                 concept: item.t[1],
                 explanation: [`${item.e} 關鍵詞：${item.k}`, `成因：${item.p}`]
             };
@@ -78,7 +124,7 @@
     waitForEngine(G => {
         const geoDB = buildGeoDB();
         registerTemplates(G, geoDB);
-        console.log("🌏 地理題庫（模組化版）已載入！");
+        console.log("🌏 地理題庫（嚴格去重版）已載入！");
     });
 
 })(window);
