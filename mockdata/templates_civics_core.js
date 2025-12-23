@@ -1,24 +1,16 @@
-(function (global) {
+(function(global){
     'use strict';
 
-    // -----------------------------
-    // 等待引擎就緒
-    // -----------------------------
-    function waitForEngine(callback) {
+    function init() {
         const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
-        if (!G || !G.registerTemplate) {
-            setTimeout(() => waitForEngine(callback), 100);
-            return;
-        }
-        callback(G);
-    }
+        if (!G || !G.registerTemplate) { setTimeout(init, 100); return; }
+        const { pick, shuffle } = G.utils;
 
-    // -----------------------------
-    // 公民核心資料庫
-    // -----------------------------
-    function buildCivicsDB() {
-        return [
-           
+        // ==========================================
+        //  公民科核心資料庫 (Civics Core Database)
+        //  結構：s=科目, t=[年級,單元], e=名詞, y=特徵, p=相關概念, k=關鍵字, d=描述
+        // ==========================================
+        const civicsDB = [
     { s:"公民", t:["國七","社會"], e:"性別刻板印象", y:"偏見", p:"文化", k:"男主外", d:"對特定性別抱持固定的看法或期望" },
     { s:"公民", t:["國七","社會"], e:"家庭功能", y:"社會化", p:"教育", k:"生育", d:"家庭教導子女社會規範與價值觀的過程" },
 
@@ -202,90 +194,59 @@
     { s:"公民", t:["高三","政治"], e:"未來公民素養", y:"批判與創新", p:"終身學習", k:"全球視野", d:"培養批判思考、創新能力與全球視野以面對未來挑戰" }
 ];
 
-    }
+        ];
 
-    // -----------------------------
-    // 通用選項生成器
-    // -----------------------------
-    function generateOptions(G, db, item, field) {
-        const { shuffle } = G.utils;
-        const correct = item[field].trim();
-        const selected = new Set([correct]);
-        const wrongOpts = [];
+        // ==========================================
+        // 註冊模板 (多樣化題型)
+        // ==========================================
 
-        // 策略 A: 同單元優先
-        const sameUnit = shuffle(db.filter(x => x.t[1] === item.t[1]));
-        for (const cand of sameUnit) {
-            const txt = cand[field].trim();
-            if (!selected.has(txt)) {
-                wrongOpts.push(txt);
-                selected.add(txt);
+        // 1. 基本觀念題 (敘述找名詞)
+        G.registerTemplate('civics_concept', (ctx, rnd) => {
+            const item = pick(civicsDB);
+            
+            // 誘答：優先找同領域(如都是經濟)的錯誤選項
+            const sameTag = civicsDB.filter(x => x.t[1] === item.t[1] && x.e !== item.e);
+            const others = civicsDB.filter(x => x.e !== item.e);
+            
+            let wrongOpts;
+            if (sameTag.length >= 3) {
+                wrongOpts = shuffle(sameTag).slice(0, 3).map(x => x.e);
+            } else {
+                wrongOpts = shuffle(others).slice(0, 3).map(x => x.e);
             }
-            if (wrongOpts.length >= 3) break;
-        }
 
-        // 策略 B: 全域補足
-        if (wrongOpts.length < 3) {
-            const all = shuffle(db);
-            for (const cand of all) {
-                const txt = cand[field].trim();
-                if (!selected.has(txt)) {
-                    wrongOpts.push(txt);
-                    selected.add(txt);
-                }
-                if (wrongOpts.length >= 3) break;
-            }
-        }
+            const opts = shuffle([item.e, ...wrongOpts]);
+            
+            return {
+                question: `【公民 - ${item.t[1]}】「${item.d}」，這是在描述下列哪個概念？`,
+                options: opts,
+                answer: opts.indexOf(item.e),
+                concept: item.t[1],
+                explanation: [`正確答案：${item.e}`, `說明：${item.d}`]
+            };
+        }, ["civics", "公民", "社會", "國七", "國八", "國九", "高一"]);
 
-        const finalOpts = shuffle([correct, ...wrongOpts]);
-        return { options: finalOpts, answer: finalOpts.indexOf(correct) };
+        // 2. 特徵判斷題 (名詞找特徵)
+        G.registerTemplate('civics_reverse', (ctx, rnd) => {
+            const item = pick(civicsDB);
+            
+            // 誘答：找其他項目的特徵
+            const wrongOpts = shuffle(civicsDB.filter(x => x.e !== item.e)).slice(0, 3).map(x => x.y);
+            const opts = shuffle([item.y, ...wrongOpts]);
+
+            return {
+                question: `【公民 - ${item.t[1]}】關於「${item.e}」的敘述，下列何者正確？`,
+                options: opts,
+                answer: opts.indexOf(item.y),
+                concept: item.t[1],
+                explanation: [`${item.e} 的關鍵特徵是：${item.y}`]
+            };
+        }, ["civics", "公民", "社會", "國七", "國八", "國九", "高一"]);
+
+        console.log("✅ 公民題庫 (完整修復版) 已載入完成。");
     }
 
-    // -----------------------------
-    // 註冊題目模板
-    // -----------------------------
-    function registerTemplates(G, civicsDB) {
-        const { pick } = G.utils;
-
-        // 填空題
-        G.registerTemplate("fillBlank", (item) => {
-            const opts = generateOptions(G, civicsDB, item, "d");
-            return {
-                question: `請選出以下描述對應的概念：「${item.d}」`,
-                options: opts.options,
-                answer: opts.answer,
-                meta: { subject: item.s, grade: item.t[0], unit: item.t[1], keyword: item.k }
-            };
-        });
-
-        // 關鍵詞配對題
-        G.registerTemplate("keywordMatch", (item) => {
-            const opts = generateOptions(G, civicsDB, item, "k");
-            return {
-                question: `下列哪一個關鍵詞最符合描述：「${item.d}」`,
-                options: opts.options,
-                answer: opts.answer,
-                meta: { subject: item.s, grade: item.t[0], unit: item.t[1], explanation: item.e }
-            };
-        });
-
-        // 依年級生成題目
-        G.generateCivicsQuestion = (grade) => {
-            const candidates = civicsDB.filter(x => x.t[0] === grade);
-            if (!candidates.length) return null;
-            const item = pick(candidates);
-            const template = pick(["fillBlank", "keywordMatch"]);
-            return G.generate(template, item);
-        };
-    }
-
-    // -----------------------------
-    // 初始化題庫
-    // -----------------------------
-    waitForEngine((G) => {
-        const civicsDB = buildCivicsDB();
-        registerTemplates(G, civicsDB);
-        console.log("✅ 公民題庫模板已註冊完成");
-    });
+    // 啟動！
+    init();
 
 })(window);
