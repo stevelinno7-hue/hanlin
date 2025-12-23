@@ -68,54 +68,58 @@
       { t: "不定積分", q: (a,b)=>`求 ∫ ${a} dx = ?`, type:'text', opts:(a)=>[ `${a}x + C`, `${a} + C`, `x + C`, `${a}x`], a:()=>0, tag:["高三","積分"] },
       { t: "期望值", q: (a,b)=>`擲一骰子，出現 n 點可得 ${a}n 元，期望值為何？`, a: (a,b)=>a*3.5, tag:["高三","機率"] },
       { t: "條件機率", q: (a,b)=>`P(A|B) 的定義為何？`, type:'text', opts:['P(A∩B)/P(B)','P(A∩B)/P(A)','P(A)/P(B)','P(A)P(B)'], a:()=>0, tag:['高三','機率'] }
-    ];
+    ];    // ★ 年級篩選函式
+    function filterByGrade(db, userTags) {
+        const allGrades = ["國七","國八","國九","高一","高二","高三"];
+        const targetGrade = userTags.find(tag => allGrades.includes(tag));
+        if (targetGrade) {
+            const filtered = db.filter(item => item.tag.includes(targetGrade));
+            return filtered.length > 0 ? filtered : db; // 防呆
+        }
+        return db; // 未指定年級回傳全部
+    }
 
-    // 啟動註冊
     waitForEngine(G => {
         const { randInt, shuffle, generateNumericOptions } = G.utils;
 
+        // 註冊所有題目模板
         mathDB.forEach((p, i) => {
             G.registerTemplate(`math_q${i}`, (ctx, rnd) => {
-                // 生成兩個隨機參數
-                const v1 = randInt(2, 9);
-                const v2 = randInt(2, 9);
-                
-                // 計算正確答案
-                let ans = p.a(v1, v2);
+                // 先過濾題庫
+                const validDB = filterByGrade([p], ctx.tags || []);
+                if (!validDB.length) return null;
+                const pItem = validDB[0];
+
+                // 隨機參數
+                const v1 = randInt(2,9), v2 = randInt(2,9);
+                let ans = pItem.a(v1,v2);
                 let opts;
 
-                // 處理選項生成
-                if (p.type === 'text' || p.type === 'fraction') {
-                    // 文字或分數類題目，使用預定義的選項並打亂
-                    const op = typeof p.opts === 'function' ? p.opts(v1, v2) : p.opts;
-                    opts = shuffle(op); 
-                    // 確保 ans 字串匹配正確
-                    ans = (p.type === 'fraction') ? ans : op[0]; 
-                    if (p.type === 'fraction') {
-                        // 分數題型特殊處理，確保 ans 是字串形式
-                        // 若原 ans 函數回傳數字，這裡需對應到 opts 裡的字串
-                        // 這裡簡化處理：假設 fraction 題型正確答案在 opts[0]
-                         const correctStr = (typeof p.opts === 'function' ? p.opts(v1) : p.opts)[0];
-                         ans = correctStr;
+                if (pItem.type === 'text' || pItem.type === 'fraction') {
+                    const op = typeof pItem.opts === 'function' ? pItem.opts(v1,v2) : pItem.opts;
+                    opts = shuffle(op);
+                    if (pItem.type === 'fraction') {
+                        const correctStr = (typeof pItem.opts === 'function' ? pItem.opts(v1) : pItem.opts)[0];
+                        ans = correctStr;
+                    } else {
+                        ans = op[0];
                     }
                 } else {
-                    // 數字類題目，使用數值擾動生成錯誤選項
-                    // 檢測是否為整數
                     const isInt = Number.isInteger(ans);
                     opts = shuffle(generateNumericOptions(ans, isInt ? 'int' : 'float'));
                 }
 
                 return {
-                    question: `【數學】${p.q(v1, v2)}`,
+                    question: `【數學】${pItem.q(v1,v2)}`,
                     options: opts,
                     answer: opts.indexOf(ans),
-                    concept: p.t,
+                    concept: pItem.t,
                     explanation: [`正確答案：${ans}`]
                 };
-            }, ["math", "數學", ...p.tag]);
+            }, ["math","數學", ...p.tag]);
         });
 
-        console.log("✅ 數學題庫 (Grade 7-12) 已載入完成。");
+        console.log("✅ 數學題庫 (含年級篩選) 已載入完成。");
     });
 
 })(window);
