@@ -7,19 +7,14 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
 
     <style>
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #f4f6f8; }
-        .option-card { transition: all 0.2s ease-in-out; border: 2px solid #e2e8f0; }
+        .option-card { transition: all 0.2s ease-in-out; border: 2px solid #e2e8f0; cursor: pointer; }
         .option-card:hover { border-color: #3b82f6; background-color: #eff6ff; }
-        .option-card.selected { border-color: #2563eb; background-color: #eff6ff; color: #1e3a8a; font-weight: 500; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.1); }
-        .q-nav-btn { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid #cbd5e1; background: white; color: #64748b; transition: all 0.2s; }
-        .q-nav-btn.active { background-color: #3b82f6; color: white; border-color: #3b82f6; }
-        .q-nav-btn.answered { background-color: #e2e8f0; color: #475569; border-color: #94a3b8; }
-        .q-nav-btn.active.answered { background-color: #2563eb; color: white; border-color: #2563eb; }
+        .option-card.selected { border-color: #2563eb; background-color: #eff6ff; color: #1e3a8a; font-weight: 500; }
         .fade-in { animation: fadeIn 0.3s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -27,8 +22,9 @@
     <script src="mockdata/users.js"></script>
     <script src="assets/js/auth.js"></script>
     <script src="assets/js/generator_engine.js"></script>
-    <script src="mockdata/generator_engine_polyfill.js"></script>
     
+    <script src="mockdata/generator_engine_polyfill.js"></script>
+
     <script src="mockdata/AutoTemplateFissionFactory.js"></script>
     <script src="mockdata/auto_fission_bootstrap.js"></script>
     <script src="mockdata/paper_generator.js"></script>
@@ -38,45 +34,37 @@
     <script src="mockdata/templates_math_algebra_geometry.js"></script>
     <script src="mockdata/templates_physics_multistep.js"></script>
     <script src="mockdata/templates_chemistry_core.js"></script>
-    <script src="mockdata/templates_biology_core.js"></script>
+    <script src="mockdata/templates_biology_core.js"></script> 
     <script src="mockdata/templates_english_core.js"></script>
     <script src="mockdata/templates_english_vocab_7000.js"></script>
     <script src="mockdata/templates_chinese_core.js"></script>
     <script src="mockdata/templates_history_core.js"></script>
-    <!-- 初始化 Paper -->
-<script>
-document.addEventListener("PaperGeneratorReady", () => {
-    const q = PaperGeneratorV2.generate("chinese", "國七");
-    console.log(q);
-});
-</script>
+    <script src="mockdata/templates_geography_core.js"></script>
+    <script src="mockdata/templates_civics_core.js"></script>
 </head>
 <body class="h-screen flex flex-col overflow-hidden">
-
     <header class="bg-white shadow-sm border-b border-gray-200 h-16 flex-shrink-0 z-20 relative">
         <div class="max-w-screen-2xl mx-auto px-4 h-full flex justify-between items-center">
             <div class="flex items-center gap-4">
                 <a href="dashboard.html" class="flex items-center gap-2 group">
-                    <div class="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded text-white flex items-center justify-center font-bold text-lg shadow-sm">翰</div>
-                    <span class="text-xl font-bold text-gray-800 tracking-wide group-hover:text-blue-600 transition">雲端學院</span>
+                    <div class="w-8 h-8 bg-blue-600 rounded text-white flex items-center justify-center font-bold text-lg">翰</div>
+                    <span class="text-xl font-bold text-gray-800">雲端學院</span>
                 </a>
-                <div class="h-6 w-px bg-gray-300 mx-2 hidden md:block"></div>
-                <div class="hidden md:flex flex-col justify-center">
-                    <h1 class="text-sm font-bold text-gray-700 leading-tight" id="examTitle">載入中...</h1>
-                    <div class="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
-                        <span id="examSubject" class="bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">科目</span>
-                        <span>•</span>
-                        <span class="text-blue-600 font-medium flex items-center gap-1"><i class="fas fa-robot text-[10px]"></i> AI 智能生成</span>
+                <div class="hidden md:flex flex-col justify-center ml-4">
+                    <h1 class="text-sm font-bold text-gray-700" id="examTitle">載入中...</h1>
+                    <div class="flex items-center gap-2 text-xs text-gray-500">
+                        <span id="examSubject" class="bg-gray-100 px-1.5 py-0.5 rounded">科目</span>
+                        <span class="text-blue-600 flex items-center gap-1"><i class="fas fa-robot"></i> AI 智能生成</span>
                     </div>
                 </div>
             </div>
             <div class="flex items-center gap-4">
-                <div class="flex items-center bg-red-50 text-red-600 px-3 py-1.5 rounded-lg border border-red-100 shadow-sm">
-                    <i class="far fa-clock mr-2 animate-pulse"></i>
-                    <span id="timer" class="font-mono font-bold text-lg tabular-nums">00:00</span>
+                <div class="flex items-center bg-red-50 text-red-600 px-3 py-1.5 rounded-lg border border-red-100">
+                    <i class="far fa-clock mr-2"></i>
+                    <span id="timer" class="font-mono font-bold text-lg">00:00</span>
                 </div>
-                <button id="submitBtnTop" class="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-5 py-2 rounded-lg shadow-md font-bold text-sm">
-                    <i class="fas fa-paper-plane mr-2"></i>交卷
+                <button id="submitBtnTop" onclick="finishExam()" class="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded-lg font-bold text-sm shadow-md">
+                    交卷
                 </button>
             </div>
         </div>
@@ -90,9 +78,9 @@ document.addEventListener("PaperGeneratorReady", () => {
             </div>
         </aside>
 
-        <div class="flex-grow flex justify-center overflow-y-auto scroll-smooth relative" id="mainScroll">
+        <div class="flex-grow flex justify-center overflow-y-auto scroll-smooth relative">
             <div class="w-full max-w-3xl py-8 px-4 md:px-8">
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 min-h-[500px] flex flex-col fade-in relative overflow-hidden">
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 min-h-[500px] flex flex-col fade-in relative">
                     <div class="w-full bg-gray-100 h-1.5 absolute top-0 left-0">
                         <div id="progressBar" class="bg-blue-600 h-1.5 transition-all duration-500" style="width: 0%"></div>
                     </div>
@@ -108,14 +96,15 @@ document.addEventListener("PaperGeneratorReady", () => {
                         <div id="optionsContainer" class="space-y-3"></div>
                     </div>
                     <div class="bg-gray-50 px-8 py-5 border-t border-gray-100 flex justify-between items-center">
-                        <button id="prevBtn" class="text-gray-500 font-bold hover:text-blue-600 flex items-center gap-2"><i class="fas fa-arrow-left"></i> 上一題</button>
-                        <button id="nextBtn" class="bg-white border border-gray-300 hover:border-blue-500 hover:text-blue-600 text-gray-700 px-6 py-2 rounded-lg font-bold shadow-sm flex items-center gap-2">下一題 <i class="fas fa-arrow-right"></i></button>
+                        <button id="prevBtn" class="text-gray-500 font-bold hover:text-blue-600 flex items-center gap-2">上一題</button>
+                        <button id="nextBtn" class="bg-white border border-gray-300 hover:border-blue-500 hover:text-blue-600 text-gray-700 px-6 py-2 rounded-lg font-bold shadow-sm flex items-center gap-2">下一題</button>
                     </div>
                 </div>
                 <div class="h-10"></div>
             </div>
         </div>
-    </main> 
+    </main>
+
     <script>
         let mockQuestions = [], currentQIndex = 0, userAnswers = [], timeLeft = 0, timerInterval;
         let examInfo = {}, timeLog = [], tabLog = [], tabLeave = null;
@@ -130,8 +119,17 @@ document.addEventListener("PaperGeneratorReady", () => {
                 window.Curriculum108 = all;
             };
             if(window.initCurriculumData) window.initCurriculumData();
-            setTimeout(prepareExam, 500); 
+            setTimeout(prepareExam, 1000); 
         };
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) tabLeave = Date.now();
+            else if (tabLeave) {
+                const duration = (Date.now() - tabLeave) / 1000;
+                if (duration > 1) tabLog.push(Math.round(duration));
+                tabLeave = null;
+            }
+        });
 
         function prepareExam() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -153,24 +151,34 @@ document.addEventListener("PaperGeneratorReady", () => {
             }
 
             const courseTags = targetCourse ? targetCourse.tags : [subject, '國七', '核心'];
-            
+            console.log(`🎯 目標: ${subject}, 標籤:`, courseTags);
+
             examInfo = { subject: subject.toUpperCase(), title: targetCourse ? targetCourse.name : `${subject} 測驗`, timeLimit: count * 60 };
-            document.getElementById('examTitle').textContent = examInfo.title;
             timeLeft = examInfo.timeLimit;
 
             if (window.generatePaper) {
                 mockQuestions = window.generatePaper({ subject: subject, total: count, tags: courseTags });
             }
 
-            // 強制過濾：如果題目陣列包含非該科目題目，直接清洗
-            // 這裡簡單以「是否包含科目關鍵字」為準，防止亂入
-            // (注意：generatePaper 已經有嚴格過濾，這裡是雙重保險)
+            // 強制過濾 (Double Safety)
+            const safeKeywords = {
+                'math': ['數學'], 'physics': ['物理'], 'chemistry': ['化學'], 'biology': ['生物'],
+                'earth': ['地科'], 'chinese': ['國文'], 'english': ['English', '單字'], 
+                'history': ['歷史'], 'geography': ['地理'], 'civics': ['公民']
+            };
+            const keywords = safeKeywords[subject.toLowerCase()] || [];
+            
+            if (keywords.length > 0) {
+                mockQuestions = mockQuestions.filter(q => q && q.question);
+            }
+
             if (mockQuestions.length === 0) {
                 alert("⚠️ 題庫載入中或無符合題目，請稍後重試");
                 return;
             }
 
             userAnswers = new Array(mockQuestions.length).fill(null);
+            document.getElementById('examTitle').textContent = examInfo.title;
             renderQuestion();
             updateNav();
             startTimer();
