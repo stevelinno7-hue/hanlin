@@ -245,37 +245,68 @@
         // ------------------------------------------
         // ⭐ 生成題目
         // ------------------------------------------
+// ------------------------------------------
+// ⭐ 生成題目 (修正版)
+// ------------------------------------------
 G.registerTemplate('chi_basic', (ctx, rnd) => {
 
-    // 隨機挑一題
+    // 1. 隨機挑一題正確答案
     const item = pick(chiData);
+    const correctAns = item.a.trim(); // 確保去除空白
 
-    // ---------- 1️⃣ 選題型 ----------
-    const mainType = getType(item.tag[1]);  // 例如 "修辭" → "rhetoric"
+    // 2. 決定題型與模板
+    const mainType = getType(item.tag[1]);
     const pool = templates[mainType];
-
-    // ---------- 2️⃣ 隨機前綴/語氣 ----------
     const prefixes = ["嘿～", "小心！", "試想：", "注意：", ""];
     const questionText = pick(prefixes) + pick(pool)(item.q);
 
-    // ---------- 3️⃣ 生成錯選項 ----------
-    // 根據概念（tag[1]）挑選錯答案
-    const similarWrong = shuffle(
-        chiData.filter(x => x.a !== item.a && x.tag[1] === item.tag[1])
-    ).slice(0, 3).map(x => x.a);
+    // 3. 生成錯誤選項 (更嚴謹的邏輯)
+    // 先建立一個 Set 來儲存已選的答案，確保不重複
+    const selectedAnswers = new Set();
+    selectedAnswers.add(correctAns);
 
-    // 如果不足3個，再從其他題補足
-    while (similarWrong.length < 3) {
-        const extra = pick(chiData.filter(x => x.a !== item.a && !similarWrong.includes(x.a)));
-        similarWrong.push(extra.a);
+    const wrongOptions = [];
+
+    // 策略 A: 優先從「同類型」(同 tag) 找錯誤答案
+    // 過濾出：同類型 + 答案不等於正確答案
+    const sameTypeCandidates = chiData.filter(x => 
+        x.tag[1] === item.tag[1] && x.a.trim() !== correctAns
+    );
+
+    // 隨機打亂候選清單
+    const shuffledCandidates = shuffle(sameTypeCandidates);
+
+    // 填入錯誤選項
+    for (const cand of shuffledCandidates) {
+        const candAns = cand.a.trim();
+        if (!selectedAnswers.has(candAns)) {
+            wrongOptions.push(candAns);
+            selectedAnswers.add(candAns);
+        }
+        if (wrongOptions.length >= 3) break; // 湊滿3個錯誤選項就停
     }
 
-    const opts = shuffle([item.a, ...similarWrong]);
+    // 策略 B: 如果同類型的湊不滿3個，就從「全部題庫」裡隨機補足
+    if (wrongOptions.length < 3) {
+        const allCandidates = shuffle(chiData); // 打亂全部
+        for (const cand of allCandidates) {
+            const candAns = cand.a.trim();
+            if (!selectedAnswers.has(candAns)) {
+                wrongOptions.push(candAns);
+                selectedAnswers.add(candAns);
+            }
+            if (wrongOptions.length >= 3) break;
+        }
+    }
+
+    // 4. 組合最終選項並打亂
+    // 這裡建立了全新的陣列，確保 index 絕對正確
+    const finalOptions = shuffle([correctAns, ...wrongOptions]);
 
     return {
         question: `【國文】${questionText}`,
-        options: opts,
-        answer: opts.indexOf(item.a),
+        options: finalOptions,
+        answer: finalOptions.indexOf(correctAns), // 這裡抓出的 index 絕對是對應到 correctAns
         concept: item.tag[1],
         explanation: [`答案：${item.a}`]
     };
