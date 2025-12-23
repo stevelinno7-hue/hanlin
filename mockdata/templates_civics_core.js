@@ -17,7 +17,6 @@
             // [國七] 社會
             { s:"公民", t:["國七","社會"], e:"性別刻板印象", y:"偏見", p:"文化", k:"男主外", d:"對特定性別抱持固定的看法或期望" },
             { s:"公民", t:["國七","社會"], e:"家庭功能", y:"社會化", p:"教育", k:"生育", d:"家庭教導子女社會規範與價值觀的過程" },
-
             // [國八] 政治與法律
             { s:"公民", t:["國八","政治"], e:"主權", y:"國家最高權力", p:"國家要素", k:"對內最高", d:"國家對內擁有最高統治權，對外獨立自主" },
             { s:"公民", t:["國八","政治"], e:"基本人權", y:"憲法保障", p:"自由權", k:"平等權", d:"人民與生俱來的權利，政府應予以保障" },
@@ -25,7 +24,6 @@
             { s:"公民", t:["國八","法律"], e:"罪刑法定主義", y:"法律保留", p:"刑法", k:"不溯及既往", d:"行為時法律未規定者，不得處罰" },
             { s:"公民", t:["國八","法律"], e:"契約自由", y:"私法自治", p:"民法", k:"誠信原則", d:"個人可依自由意志訂立契約，法律原則不干涉" },
             { s:"公民", t:["國八","法律"], e:"行政處分", y:"公權力", p:"行政機關", k:"罰單", d:"行政機關就公法上具體事件所做的單方決定" },
-
             // [國九] 經濟
             { s:"公民", t:["國九","經濟"], e:"機會成本", y:"代價", p:"選擇", k:"價值最高", d:"做出選擇時，所放棄的選項中價值最高者" },
             { s:"公民", t:["國九","經濟"], e:"需求法則", y:"反向變動", p:"消費者", k:"價格", d:"其他條件不變下，價格上漲，需求量減少" },
@@ -33,7 +31,6 @@
             { s:"公民", t:["國九","經濟"], e:"外部效果", y:"市場失靈", p:"庇古", k:"成本內部化", d:"經濟行為對無關第三人造成的影響(如汙染)" },
             { s:"公民", t:["國九","經濟"], e:"公共財", y:"共享性", p:"國防", k:"無法排他", d:"具有共享性與無法排他性的財貨" },
             { s:"公民", t:["國九","經濟"], e:"GDP", y:"國內生產毛額", p:"經濟成長", k:"最終產品", d:"一國境內在一定期間內生產的最終產品與勞務總值" },
-
             // [高中] 進階
             { s:"公民", t:["高一","政治"], e:"內閣制", y:"虛位元首", p:"英國", k:"信任投票", d:"行政權對立法權負責，國會可提不信任案" },
             { s:"公民", t:["高一","政治"], e:"總統制", y:"覆議權", p:"美國", k:"分立制衡", d:"總統由人民直選，行政與立法權完全分立" },
@@ -41,35 +38,81 @@
         ];
     }
 
+    // ----------------------------------------------------
+    // 通用選項生成器 (核心修復邏輯)
+    // db: 資料庫
+    // item: 當前題目物件
+    // field: 要取用的欄位 ('y' 或 'k')
+    // ----------------------------------------------------
+    function generateStrictOptions(G, db, item, field) {
+        const { shuffle } = G.utils;
+        const correctAns = item[field].trim();
+        
+        // 使用 Set 去重
+        const selected = new Set();
+        selected.add(correctAns);
+        const wrongOpts = [];
+
+        // 策略 A: 同類型 (tag[1]) 優先
+        const sameType = shuffle(db.filter(x => x.t[1] === item.t[1]));
+        for(const cand of sameType) {
+            const txt = cand[field].trim();
+            if(!selected.has(txt)) {
+                wrongOpts.push(txt);
+                selected.add(txt);
+            }
+            if(wrongOpts.length >= 3) break;
+        }
+
+        // 策略 B: 全域補足
+        if(wrongOpts.length < 3) {
+            const all = shuffle(db);
+            for(const cand of all) {
+                const txt = cand[field].trim();
+                if(!selected.has(txt)) {
+                    wrongOpts.push(txt);
+                    selected.add(txt);
+                }
+                if(wrongOpts.length >= 3) break;
+            }
+        }
+
+        const finalOpts = shuffle([correctAns, ...wrongOpts]);
+        return {
+            options: finalOpts,
+            answer: finalOpts.indexOf(correctAns)
+        };
+    }
+
     // 註冊模板
     function registerCivicsTemplates(G, civicsDB) {
-        const { pick, shuffle } = G.utils;
+        const { pick } = G.utils;
 
-        // 公民特徵題
+        // 1. 公民特徵題 (考 item.y)
         G.registerTemplate('civics_feat', () => {
             const item = pick(civicsDB);
-            const wrong = shuffle(civicsDB.filter(x => x !== item)).slice(0, 3).map(x => x.y);
-            const opts = shuffle([item.y, ...wrong]);
+            // 呼叫嚴格生成器，針對 'y' 欄位
+            const { options, answer } = generateStrictOptions(G, civicsDB, item, 'y');
 
             return {
                 question: `【公民】關於「${item.e}」，下列敘述何者正確？`,
-                options: opts,
-                answer: opts.indexOf(item.y),
+                options: options,
+                answer: answer,
                 concept: item.t[1],
                 explanation: [`正確答案：${item.y}`, `詳細說明：${item.d}`]
             };
         }, ["civics", "公民", "社會", "國七", "國八", "國九", "高一"]);
 
-        // 公民關鍵字題
+        // 2. 公民關鍵字題 (考 item.k)
         G.registerTemplate('civics_key', () => {
             const item = pick(civicsDB);
-            const wrong = shuffle(civicsDB.filter(x => x !== item)).slice(0, 3).map(x => x.k);
-            const opts = shuffle([item.k, ...wrong]);
+            // 呼叫嚴格生成器，針對 'k' 欄位
+            const { options, answer } = generateStrictOptions(G, civicsDB, item, 'k');
 
             return {
                 question: `【公民】提到「${item.e}」，最常聯想到哪個概念？`,
-                options: opts,
-                answer: opts.indexOf(item.k),
+                options: options,
+                answer: answer,
                 concept: item.t[1],
                 explanation: [`${item.e} 關鍵詞：${item.k}`, `相關概念：${item.p}`]
             };
@@ -80,7 +123,7 @@
     waitForEngine(G => {
         const civicsDB = buildCivicsDB();
         registerCivicsTemplates(G, civicsDB);
-        console.log("⚖️ 公民題庫（模組化版）已載入！");
+        console.log("⚖️ 公民題庫（嚴格去重版）已載入！");
     });
 
 })(window);
