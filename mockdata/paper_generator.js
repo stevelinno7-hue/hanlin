@@ -13,84 +13,83 @@
         const allIds = Object.keys(templateMap);
 
         // ==========================================
-        // 1. 定義科目關鍵字 (白名單)
+        // 1. 定義對照表 (白名單)
         // ==========================================
         const subjectWhitelist = {
             'math': ['math', '數學'],
-            'physics': ['physics', '物理', '理化'],
-            'chemistry': ['chemistry', '化學', '理化'],
-            'biology': ['biology', '生物'],
-            'earth': ['earth', '地科', '地球科學'],
+            'physics': ['physics', '物理', '理化', '自然'],
+            'chemistry': ['chemistry', '化學', '理化', '自然'],
+            'biology': ['biology', '生物', '自然'],
+            'earth': ['earth', '地科', '地球科學', '自然'],
             'chinese': ['chinese', '國文', '語文'],
             'english': ['english', '英文', '英語'],
-            'history': ['history', '歷史'],
-            'geography': ['geography', '地理'],
-            'civics': ['civics', '公民']
+            'history': ['history', '歷史', '社會'],
+            'geography': ['geography', '地理', '社會'],
+            'civics': ['civics', '公民', '社會']
         };
 
-        // 取得當前科目允許的關鍵字 (例如 math -> ['math', '數學'])
-        // 如果科目不在清單中 (如 social)，就寬鬆處理
-        const targetKeywords = subjectWhitelist[subject.toLowerCase()] || [subject.toLowerCase()];
-
-        console.log(`🔍 [PaperGen] 正在搜尋科目: ${subject} (關鍵字: ${targetKeywords})`);
+        // 定義所有可能的年級標籤 (用於鎖定)
+        const allGrades = ["國七", "國八", "國九", "高一", "高二", "高三", "七年級", "八年級", "九年級"];
 
         // ==========================================
-        // 2. 嚴格篩選 (Strict Filter)
+        // 2. 解析需求
+        // ==========================================
+        // A. 找出科目關鍵字
+        const targetKeywords = subjectWhitelist[subject.toLowerCase()] || [subject.toLowerCase()];
+        
+        // B. ★關鍵★ 找出使用者請求中的「年級標籤」
+        // 例如 tags = ["math", "國七", "核心"] -> targetGrade = "國七"
+        const targetGrade = tags.find(t => allGrades.includes(t));
+
+        console.log(`🔒 [PaperGen] 鎖定條件 -> 科目:${targetKeywords}, 年級:${targetGrade || "無限制"}`);
+
+        // ==========================================
+        // 3. 嚴格篩選 (Strict Filter)
         // ==========================================
         const candidates = allIds.filter(id => {
             const tTags = templateTagMap[id] || [];
             
-            // 【絕對條件】檢查科目標籤 (Must match Subject)
-            // 題目的標籤陣列中，必須包含 targetKeywords 裡的至少一個字
-            // 例如：題目標籤 ["math", "國七"] vs 關鍵字 ["math", "數學"] -> 符合
-            // 例如：題目標籤 ["history", "國七"] vs 關鍵字 ["math", "數學"] -> 不符合
+            // 條件一：檢查科目 (必須符合)
             const isCorrectSubject = tTags.some(tag => 
                 targetKeywords.some(k => tag.toLowerCase().includes(k))
             );
-
-            // ❌ 如果科目不對，直接剔除 (這行是防止大雜燴的關鍵！)
             if (!isCorrectSubject) return false;
 
-            // 【次要條件】檢查年級/範圍
-            // 如果 user 有指定 tags (如 '國七'), 則題目必須包含該 tag
-            // 但為了避免篩太乾淨變成 0 題，我們允許只要科目對了，年級稍微寬鬆一點
-            const hasMatchingTag = tags.some(reqTag => tTags.includes(reqTag));
-            
-            return hasMatchingTag;
+            // 條件二：檢查年級 (如果有指定年級，則必須完全符合)
+            if (targetGrade) {
+                // 如果題目沒有該年級標籤，直接剔除！(這就是防止跨年級的關鍵)
+                if (!tTags.includes(targetGrade)) return false;
+            }
+
+            return true;
         });
 
+        // ==========================================
+        // 4. 生成題目
+        // ==========================================
         if (candidates.length === 0) {
-            console.warn(`[PaperGen] 找不到符合年級的 [${subject}] 題目。啟動同科備援。`);
-            
-            // Fallback: 只要科目對就好，不管年級了
-            const fallbackCandidates = allIds.filter(id => {
-                const tTags = templateTagMap[id] || [];
-                return tTags.some(tag => targetKeywords.some(k => tag.toLowerCase().includes(k)));
-            });
-
-            if (fallbackCandidates.length > 0) {
-                for (let i = 0; i < total; i++) {
-                    const tid = fallbackCandidates[Math.floor(Math.random() * fallbackCandidates.length)];
-                    try { questions.push(G.generateQuestion(tid)); } catch(e){}
-                }
-                return questions;
-            }
+            console.warn(`[PaperGen] 找不到符合 [${subject}] + [${targetGrade}] 的題目。`);
             return [];
         }
 
-        // 正常選題
+        // 隨機選題 (允許重複選取不同模板，直到湊滿數量)
+        // 如果候選題目少於要求數量，我們會重複利用候選名單，但生成參數會隨機，所以題目數字會不同
         for (let i = 0; i < total; i++) {
+            // 如果題庫夠多，就隨機選；如果題庫少，就循環選
             const tid = candidates[Math.floor(Math.random() * candidates.length)];
+            
             try { 
                 const q = G.generateQuestion(tid);
                 if (q) questions.push(q);
-            } catch (e) { console.error(e); }
+            } catch (e) { 
+                console.error(e); 
+            }
         }
 
         return questions;
     }
 
     global.generatePaper = generatePaper;
-    console.log("✅ Paper Generator v2.5 (Strict Filter) 已就緒");
+    console.log("✅ Paper Generator v2.6 (Grade Locked) 已就緒");
 
 })(window);
