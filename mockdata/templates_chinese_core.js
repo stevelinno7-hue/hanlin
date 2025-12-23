@@ -245,31 +245,44 @@
         // ------------------------------------------
         // ⭐ 生成題目
         // ------------------------------------------
-        G.registerTemplate('chi_basic', (ctx, rnd) => {
+G.registerTemplate('chi_basic', (ctx, rnd) => {
 
-            // 隨機挑一題
-            const item = pick(chiData);
+    // 隨機挑一題
+    const item = pick(chiData);
 
-            const mainType = getType(item.tag[1]);  // 例如 "修辭" → "rhetoric"
-            const pool = templates[mainType];
+    // ---------- 1️⃣ 選題型 ----------
+    const mainType = getType(item.tag[1]);  // 例如 "修辭" → "rhetoric"
+    const pool = templates[mainType];
 
-            // 隨機套模板
-            const questionText = pick(pool)(item.q);
+    // ---------- 2️⃣ 隨機前綴/語氣 ----------
+    const prefixes = ["嘿～", "小心！", "試想：", "注意：", ""];
+    const questionText = pick(prefixes) + pick(pool)(item.q);
 
-            // 產生選項
-            const wrong = shuffle(chiData.filter(x => x.a !== item.a)).slice(0, 3).map(x => x.a);
-            const opts = shuffle([item.a, ...wrong]);
+    // ---------- 3️⃣ 生成錯選項 ----------
+    // 根據概念（tag[1]）挑選錯答案
+    const similarWrong = shuffle(
+        chiData.filter(x => x.a !== item.a && x.tag[1] === item.tag[1])
+    ).slice(0, 3).map(x => x.a);
 
-            return {
-                question: `【國文】${questionText}`,
-                options: opts,
-                answer: opts.indexOf(item.a),
-                concept: item.tag[1],
-                explanation: [`答案：${item.a}`]
-            };
-        }, ["chinese","國文","國七","國八","國九","高一","高二","高三"]);
+    // 如果不足3個，再從其他題補足
+    while (similarWrong.length < 3) {
+        const extra = pick(chiData.filter(x => x.a !== item.a && !similarWrong.includes(x.a)));
+        similarWrong.push(extra.a);
+    }
 
-        console.log("🎉 國文題庫（活潑題型版）已載入！");
+    const opts = shuffle([item.a, ...similarWrong]);
+
+    return {
+        question: `【國文】${questionText}`,
+        options: opts,
+        answer: opts.indexOf(item.a),
+        concept: item.tag[1],
+        explanation: [`答案：${item.a}`]
+    };
+}, ["chinese","國文","國七","國八","國九","高一","高二","高三"]);
+
+console.log("🎉 國文題庫（活潑 + 類概念選項版）已載入！");
+
     }
     init();
 })(window);
