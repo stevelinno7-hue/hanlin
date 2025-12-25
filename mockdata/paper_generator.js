@@ -34,12 +34,14 @@
         // 2. 解析需求
         // ==========================================
         const targetKeywords = subjectWhitelist[subject.toLowerCase()] || [subject.toLowerCase()];
-        const targetGrade = tags.find(t => allGrades.includes(t));
+        
+        // ★ 升級：找出所有符合的年級標籤，而不只是第一個
+        const targetGrades = tags.filter(t => allGrades.includes(t));
 
-        console.log(`🔒 [PaperGen] 鎖定條件 -> 科目:[${targetKeywords}], 年級:${targetGrade || "無限制"}`);
+        console.log(`🔒 [PaperGen] 鎖定條件 -> 科目:[${targetKeywords}], 年級:[${targetGrades.length > 0 ? targetGrades : "無限制"}]`);
 
         // ==========================================
-        // 3. 嚴格篩選 (Strict Filter Only)
+        // 3. 嚴格篩選 (Strict Filter)
         // ==========================================
         const candidates = allIds.filter(id => {
             const tTags = templateTagMap[id] || [];
@@ -51,9 +53,10 @@
             if (!isCorrectSubject) return false;
 
             // 條件二：檢查年級 (強制鎖定)
-            // 如果有指定年級，題目必須包含該年級標籤，否則直接剔除
-            if (targetGrade) {
-                if (!tTags.includes(targetGrade)) return false;
+            // 如果有指定年級，題目必須包含 *其中一個* 指定的年級
+            if (targetGrades.length > 0) {
+                const hasMatchingGrade = tTags.some(t => targetGrades.includes(t));
+                if (!hasMatchingGrade) return false;
             }
 
             return true;
@@ -62,10 +65,8 @@
         // ==========================================
         // 4. 生成題目
         // ==========================================
-        // 如果找不到嚴格符合的題目，直接回傳空陣列
-        // 讓前端顯示載入中或錯誤，而不是亂抓其他年級的題目充數
         if (candidates.length === 0) {
-            console.warn(`[PaperGen] 找不到符合 [${subject}] + [${targetGrade}] 的題目。停止生成，避免跨年級錯誤。`);
+            console.warn(`[PaperGen] 找不到符合 [${subject}] + [${targetGrades}] 的題目。停止生成。`);
             return [];
         }
 
@@ -74,7 +75,7 @@
             const tid = candidates[Math.floor(Math.random() * candidates.length)];
             
             try { 
-                // 傳入 tags 讓模板知道現在的上下文 (雖然 strict filter 已經篩過了，但傳入 ctx 是好習慣)
+                // 傳入 tags 讓模板知道上下文
                 const q = G.generateQuestion(tid, { tags: tags });
                 if (q) questions.push(q);
             } catch (e) { 
@@ -86,6 +87,6 @@
     }
 
     global.generatePaper = generatePaper;
-    console.log("✅ Paper Generator v3.2 (Strict No-Fallback) 已就緒");
+    console.log("✅ Paper Generator v3.3 (Multi-Grade Support) 已就緒");
 
 })(window);
