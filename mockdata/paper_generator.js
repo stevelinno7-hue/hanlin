@@ -13,13 +13,13 @@
         const allIds = Object.keys(templateMap);
 
         // ==========================================
-        // 1. 定義對照表 (移除廣義詞，確保科目隔離)
+        // 1. 定義「絕對」對照表 (移除所有廣義詞)
         // ==========================================
         const subjectWhitelist = {
             // 數學
             'math': ['math', '數學'],
             
-            // 自然科：移除 '自然'、'理化'，避免物理化學混在一起
+            // 自然科 (絕對分開)
             'physics': ['physics', '物理'], 
             'chemistry': ['chemistry', '化學'],
             'biology': ['biology', '生物'],
@@ -29,21 +29,21 @@
             'chinese': ['chinese', '國文', '語文'],
             'english': ['english', '英文', '英語'],
             
-            // 社會科：移除 '社會'，避免歷史地理公民混在一起
+            // 社會科 (絕對分開，拿掉「社會」這個共用詞)
             'history': ['history', '歷史'],
             'geography': ['geography', '地理'],
             'civics': ['civics', '公民']
         };
 
-        const allGrades = ["國七", "國八", "國九", "高一", "高二", "高三", "七年級", "八年級", "九年級"];
+        const allGrades = ["國七", "國八", "國九", "高一", "高二", "高三"];
 
         // ==========================================
         // 2. 解析需求
         // ==========================================
         const targetKeywords = subjectWhitelist[subject.toLowerCase()] || [subject.toLowerCase()];
-        const targetGrades = tags.filter(t => allGrades.includes(t));
+        const targetGrade = tags.find(t => allGrades.includes(t));
 
-        console.log(`🔒 [PaperGen] 鎖定條件 -> 科目:[${targetKeywords}], 年級:[${targetGrades.length > 0 ? targetGrades : "無限制"}]`);
+        console.log(`🔒 [PaperGen] 鎖定 -> 科目:[${targetKeywords}] | 年級:[${targetGrade || "全"}]`);
 
         // ==========================================
         // 3. 嚴格篩選 (Strict Filter)
@@ -51,18 +51,20 @@
         const candidates = allIds.filter(id => {
             const tTags = templateTagMap[id] || [];
             
-            // 條件一：檢查科目 (改用嚴格比對)
-            // 題目的標籤必須 "完全等於" 白名單中的關鍵字之一
-            // 例如：題目有 "歷史" tag，白名單有 "歷史"，Pass。
-            // 例如：題目有 "社會" tag，白名單只有 "歷史"，Fail (成功擋下公民題)。
-            const isCorrectSubject = tTags.some(tag => targetKeywords.includes(tag));
-            if (!isCorrectSubject) return false;
+            // A. 科目檢查 (必須包含指定的科目關鍵字)
+            // 這裡使用 some，只要標籤中有一個符合科目關鍵字即可
+            const isSubjectMatch = tTags.some(tag => targetKeywords.includes(tag));
+            if (!isSubjectMatch) return false;
 
-            // 條件二：檢查年級 (強制鎖定)
-            if (targetGrades.length > 0) {
-                // 題目必須包含至少一個目標年級標籤
-                const hasMatchingGrade = tTags.some(t => targetGrades.includes(t));
-                if (!hasMatchingGrade) return false;
+            // B. 排除檢查 (避免歷史題混入公民)
+            // 如果我選歷史，但這個題目有「公民」標籤，直接踢掉
+            if (subject === 'history' && tTags.includes('公民')) return false;
+            if (subject === 'civics' && tTags.includes('歷史')) return false;
+            if (subject === 'geography' && tTags.includes('歷史')) return false;
+
+            // C. 年級檢查 (強制鎖定)
+            if (targetGrade) {
+                if (!tTags.includes(targetGrade)) return false;
             }
 
             return true;
@@ -72,19 +74,17 @@
         // 4. 生成題目
         // ==========================================
         if (candidates.length === 0) {
-            console.warn(`[PaperGen] 找不到符合 [${subject}] + [${targetGrades}] 的題目。停止生成，避免跨科/跨年級錯誤。`);
+            console.warn(`[PaperGen] 找不到 [${subject}] + [${targetGrade}] 的題目。`);
             return [];
         }
 
         for (let i = 0; i < total; i++) {
             const tid = candidates[Math.floor(Math.random() * candidates.length)];
-            
             try { 
-                // 傳入 tags 讓模板知道上下文
                 const q = G.generateQuestion(tid, { tags: tags });
                 if (q) questions.push(q);
             } catch (e) { 
-                console.error(`題目生成失敗 (${tid}):`, e); 
+                console.error(`Error generating ${tid}:`, e); 
             }
         }
 
@@ -92,6 +92,6 @@
     }
 
     global.generatePaper = generatePaper;
-    console.log("✅ Paper Generator v3.4 (Strict Isolation Mode) 已就緒");
+    console.log("✅ Paper Generator v4.0 (Absolute Isolation) 已就緒");
 
 })(window);
