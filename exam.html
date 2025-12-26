@@ -108,7 +108,7 @@
     <script>
         let mockQuestions = [], currentQIndex = 0, userAnswers = [], timeLeft = 0, timerInterval;
         let examInfo = {}, timeLog = [], tabLog = [], tabLeave = null;
-        let questionStartTime = 0; // 用於計算單題作答時間
+        let questionStartTime = 0; 
 
         window.onload = function() {
             if (!Auth.requireLogin()) return;
@@ -129,7 +129,7 @@
                 tabLeave = Date.now();
             } else if (tabLeave) {
                 const duration = (Date.now() - tabLeave) / 1000;
-                if (duration > 1) { // 超過1秒才記錄，避免誤觸
+                if (duration > 1) { 
                     tabLog.push(Math.round(duration));
                     console.log(`⚠️ 切換分頁偵測：離開了 ${Math.round(duration)} 秒`);
                 }
@@ -137,7 +137,7 @@
             }
         });
 
-        // 智慧重試機制：如果題庫還沒好，會嘗試重抓 3 次
+        // 智慧重試機制
         let retryCount = 0;
         function prepareExam() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -168,12 +168,12 @@
                 mockQuestions = window.generatePaper({ subject: subject, total: count, tags: courseTags });
             }
 
-            // ★★★ 智慧重試 (Smart Retry) ★★★
+            // 智慧重試 (Smart Retry)
             if (mockQuestions.length === 0) {
                 if (retryCount < 3) {
                     retryCount++;
                     console.warn(`⚠️ 題目生成為空，正在重試 (${retryCount}/3)...`);
-                    setTimeout(prepareExam, 1000); // 等 1 秒後重試
+                    setTimeout(prepareExam, 1000); 
                     return;
                 } else {
                     alert("⚠️ 題庫載入超時或無符合題目，請重新整理頁面再試一次。");
@@ -181,9 +181,8 @@
                 }
             }
 
-            // 初始化狀態
             userAnswers = new Array(mockQuestions.length).fill(null);
-            timeLog = new Array(mockQuestions.length).fill(0); // 初始化時間紀錄
+            timeLog = new Array(mockQuestions.length).fill(0); 
             
             document.getElementById('examTitle').textContent = examInfo.title;
             renderQuestion();
@@ -192,7 +191,7 @@
         }
 
         function renderQuestion() {
-            questionStartTime = Date.now(); // 開始計時
+            questionStartTime = Date.now(); 
 
             const q = mockQuestions[currentQIndex];
             document.getElementById('currentQNum').textContent = currentQIndex + 1;
@@ -209,8 +208,8 @@
                 btn.innerHTML = `<span class="font-bold mr-4">${String.fromCharCode(65+idx)}</span><span>${opt}</span>`;
                 btn.onclick = () => { 
                     userAnswers[currentQIndex] = idx; 
-                    recordTime(); // 記錄作答時間
-                    renderQuestion(); // 重新渲染以顯示選中狀態
+                    recordTime(); 
+                    renderQuestion(); 
                 };
                 optsDiv.appendChild(btn);
             });
@@ -219,21 +218,20 @@
             if (window.MathJax) MathJax.typesetPromise();
         }
 
-        // ★★★ 作答節奏分析：記錄單題時間 ★★★
         function recordTime() {
             const now = Date.now();
             const duration = (now - questionStartTime) / 1000;
-            timeLog[currentQIndex] += duration; // 累加時間 (如果反覆修改答案)
-            questionStartTime = now; // 重置起點
+            timeLog[currentQIndex] += duration; 
+            questionStartTime = now; 
         }
 
         function updateNav() {
             document.getElementById('prevBtn').onclick = () => { 
-                recordTime(); // 切換前先記錄時間
+                recordTime(); 
                 if(currentQIndex > 0) { currentQIndex--; renderQuestion(); updateNav(); } 
             };
             document.getElementById('nextBtn').onclick = () => { 
-                recordTime(); // 切換前先記錄時間
+                recordTime(); 
                 if(currentQIndex < mockQuestions.length - 1) { currentQIndex++; renderQuestion(); updateNav(); }
                 else finishExam();
             };
@@ -252,20 +250,22 @@
         }
 
         function finishExam() {
-            recordTime(); // 記錄最後一題的時間
+            recordTime(); 
             if (!confirm("確定交卷？")) return;
             clearInterval(timerInterval);
             
             let correctCount = 0;
             let wrongList = [];
-            
-            // 計算過快作答題數 (例如 < 3秒)
             let fastCount = timeLog.filter(t => t < 3).length;
 
             mockQuestions.forEach((q, idx) => {
                 if (userAnswers[idx] === q.answer) correctCount++;
                 else wrongList.push({ ...q, yourAns: userAnswers[idx], explanation: q.explanation });
             });
+
+            // 判斷診斷等級
+            let cheatLevel = fastCount > 3 ? 'HIGH' : (fastCount > 0 ? 'MEDIUM' : 'NORMAL');
+            let tabLevel = tabLog.length > 5 ? 'HIGH' : (tabLog.length > 0 ? 'MEDIUM' : 'NORMAL');
 
             const newRecord = {
                 id: Date.now(), 
@@ -276,29 +276,38 @@
                 correctCount, 
                 totalCount: mockQuestions.length, 
                 wrongList,
-                // ★★★ 新增：分析數據 ★★★
-                analysis: {
-                    fastCount: fastCount,        // 過快題數
-                    switchCount: tabLog.length,  // 切換分頁次數
-                    timeLog: timeLog             // 每題時間詳情
-                }
+                analysis: { cheatLevel, fastCount, tabLevel, switchCount: tabLog.length, timeLog }
             };
 
-            const currentUser = window.Auth ? window.Auth.getCurrentUser() : null;
-            if (currentUser) {
-                const key = `history_${currentUser.username}`;
-                let history = JSON.parse(localStorage.getItem(key) || "[]");
-                history.push(newRecord);
-                localStorage.setItem(key, JSON.stringify(history));
+            // ★★★ 核心修復：永久儲存所有紀錄 (包含訪客) ★★★
+            // 1. 確保有一個有效的 key (如果是訪客就用 'history_guest')
+            const user = window.Auth ? window.Auth.getCurrentUser() : null;
+            const historyKey = user ? `history_${user.username}` : `history_guest`;
+            const wrongKey = user ? `wrong_questions_${user.username}` : `wrong_questions_guest`;
+
+            // 2. 儲存歷史紀錄 (Append)
+            let history = JSON.parse(localStorage.getItem(historyKey) || "[]");
+            history.push(newRecord);
+            localStorage.setItem(historyKey, JSON.stringify(history));
+            console.log(`✅ 考試紀錄已儲存至 ${historyKey} (目前累積 ${history.length} 筆)`);
+
+            // 3. 儲存錯題本 (Smart Deduplication: 避免重複題目)
+            if (wrongList.length > 0) {
+                let db = JSON.parse(localStorage.getItem(wrongKey) || "[]");
                 
-                // 存入錯題本
-                if (wrongList.length > 0) {
-                    const wrongKey = `wrong_questions_${currentUser.username}`;
-                    let db = JSON.parse(localStorage.getItem(wrongKey) || "[]");
-                    localStorage.setItem(wrongKey, JSON.stringify([...wrongList, ...db]));
+                // 過濾掉已經存在於錯題本的題目 (比對題目內容)
+                const newWrongs = wrongList.filter(newQ => {
+                    return !db.some(oldQ => oldQ.question === newQ.question);
+                });
+
+                if (newWrongs.length > 0) {
+                    // 新錯題排在最前面
+                    localStorage.setItem(wrongKey, JSON.stringify([...newWrongs, ...db]));
+                    console.log(`✅ 已新增 ${newWrongs.length} 題至錯題本`);
                 }
             }
             
+            // 4. 儲存本次結果供分析頁面使用
             localStorage.setItem('examResult', JSON.stringify(newRecord));
             window.location.href = "analysis.html";
         }
