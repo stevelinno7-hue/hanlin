@@ -249,7 +249,7 @@
             }, 1000);
         }
 
-        function finishExam() {
+      function finishExam() {
             recordTime(); 
             if (!confirm("確定交卷？")) return;
             clearInterval(timerInterval);
@@ -263,9 +263,10 @@
                 else wrongList.push({ ...q, yourAns: userAnswers[idx], explanation: q.explanation });
             });
 
-            // 判斷診斷等級
-            let cheatLevel = fastCount > 3 ? 'HIGH' : (fastCount > 0 ? 'MEDIUM' : 'NORMAL');
-            let tabLevel = tabLog.length > 5 ? 'HIGH' : (tabLog.length > 0 ? 'MEDIUM' : 'NORMAL');
+            // 如果全對，當然沒有錯題
+            if (wrongList.length === 0) {
+                alert("恭喜！這次測驗您「全對」，所以錯題本不會增加題目喔！");
+            }
 
             const newRecord = {
                 id: Date.now(), 
@@ -276,34 +277,49 @@
                 correctCount, 
                 totalCount: mockQuestions.length, 
                 wrongList,
-                analysis: { cheatLevel, fastCount, tabLevel, switchCount: tabLog.length, timeLog }
+                analysis: { cheatLevel: 'NORMAL', fastCount, tabLevel: 'NORMAL', switchCount: tabLog.length, timeLog }
             };
 
-            // ★★★ 核心修復：永久儲存所有紀錄 (包含訪客) ★★★
+            // ★★★ 身份確認與 Key 生成 ★★★
             const user = window.Auth ? window.Auth.getCurrentUser() : null;
-            const historyKey = user ? `history_${user.username}` : `history_guest`;
+            // 強制指定一個 Key，確保 remedial.html 找得到
             const wrongKey = user ? `wrong_questions_${user.username}` : `wrong_questions_guest`;
 
-            // 儲存歷史紀錄
-            let history = JSON.parse(localStorage.getItem(historyKey) || "[]");
-            history.push(newRecord);
-            localStorage.setItem(historyKey, JSON.stringify(history));
+            console.log(`正在寫入 Key: ${wrongKey}`);
+            console.log(`寫入的錯題數量: ${wrongList.length}`);
 
-            // ★★★ 錯題本智慧去重 (Smart Deduplication) ★★★
+            // 1. 讀取舊資料
+            let db = [];
+            try {
+                const raw = localStorage.getItem(wrongKey);
+                if (raw) db = JSON.parse(raw);
+            } catch(e) {
+                console.error("讀取失敗，重置資料庫");
+                db = [];
+            }
+
+            // 2. 合併新錯題
             if (wrongList.length > 0) {
-                let db = JSON.parse(localStorage.getItem(wrongKey) || "[]");
-                
-                // 找出真正的新錯題 (題目內容不重複)
+                // 簡單去重：如果題目內容完全一樣就不加
                 const newWrongs = wrongList.filter(newQ => {
                     return !db.some(oldQ => oldQ.question === newQ.question);
                 });
-
-                if (newWrongs.length > 0) {
-                    // 新錯題排在最前面
-                    localStorage.setItem(wrongKey, JSON.stringify([...newWrongs, ...db]));
-                    console.log(`✅ 已新增 ${newWrongs.length} 題至錯題本`);
-                }
+                
+                const finalDB = [...newWrongs, ...db];
+                localStorage.setItem(wrongKey, JSON.stringify(finalDB));
+                
+                // ★★★ 這裡會彈出視窗證明資料已儲存 ★★★
+                alert(`系統診斷：\n已嘗試寫入 ${newWrongs.length} 題到錯題本。\n儲存位置：${wrongKey}\n目前總題數：${finalDB.length}\n\n請按確定跳轉...`);
             }
+
+            // 3. 儲存本次結果
+            localStorage.setItem('examResult', JSON.stringify(newRecord));
+            
+            // 延遲跳轉，確保資料寫入硬碟
+            setTimeout(() => {
+                window.location.href = "analysis.html";
+            }, 500);
+        }
             
             localStorage.setItem('examResult', JSON.stringify(newRecord));
             window.location.href = "analysis.html";
