@@ -3,20 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>錯題補救 - 翰林雲端學院</title>
-    
+    <title>學習歷程與錯題 - 翰林雲端學院</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
-
+    
     <style>
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #f8fafc; }
         .fade-in { animation: fadeIn 0.5s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
+        .tab-active { color: #2563eb; border-bottom: 2px solid #2563eb; font-weight: bold; }
+        .tab-inactive { color: #64748b; border-bottom: 2px solid transparent; }
+        .tab-inactive:hover { color: #334155; border-bottom: 2px solid #cbd5e1; }
     </style>
 
     <script src="mockdata/users.js"></script>
@@ -24,86 +23,71 @@
 </head>
 <body class="h-screen flex overflow-hidden">
     <aside class="w-64 bg-white border-r border-slate-100 hidden lg:flex flex-col z-20 shrink-0 h-screen sticky top-0">
-    <div class="h-16 flex items-center px-6 border-b border-slate-50">
-        <div class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm mr-2 shadow-sm">翰</div>
-        <span class="text-lg font-bold text-slate-800 tracking-tight">雲端學院</span>
-    </div>
-    <div class="px-4 py-6">
-        <div class="bg-white border border-slate-50 rounded-2xl p-6 text-center shadow-sm">
-            <div class="w-16 h-16 mx-auto bg-blue-50 rounded-full flex items-center justify-center text-2xl text-blue-500 mb-3 border-2 border-white shadow-sm">
-                <i class="fas fa-user-graduate"></i>
+        <div class="h-16 flex items-center px-6 border-b border-slate-50">
+            <div class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm mr-2">翰</div>
+            <span class="text-lg font-bold text-slate-800">雲端學院</span>
+        </div>
+        <div class="p-6 text-center">
+            <div class="w-16 h-16 mx-auto bg-blue-50 rounded-full flex items-center justify-center text-2xl text-blue-500 mb-3 border-2 border-slate-100">
+                <i class="fas fa-history"></i>
             </div>
-            <h3 class="font-bold text-slate-800 text-base" id="sideUserName">--</h3>
-            <div class="text-[11px] text-slate-400 mt-1 mb-3 font-medium uppercase tracking-wider" id="sideUserRole">--</div>
-            <button onclick="openProfileModal()" class="text-[10px] font-bold text-slate-400 border border-slate-200 px-3 py-1.5 rounded-full hover:bg-slate-50 hover:text-slate-600 transition-all">
-                <i class="fas fa-pen mr-1"></i> 編輯年級
+            <h3 class="font-bold text-slate-800" id="sideUserName">訪客</h3>
+            <p class="text-xs text-slate-400 mt-1">學習歷程中心</p>
+        </div>
+        <nav class="flex-grow px-3 space-y-1">
+            <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition font-medium">
+                <i class="fas fa-th-large w-5 text-center"></i> 課程總覽
+            </a>
+            <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-50 text-blue-600 font-bold shadow-sm">
+                <i class="fas fa-history w-5 text-center"></i> 學習歷程
+            </a>
+        </nav>
+        <div class="p-4 border-t border-slate-50">
+            <button onclick="clearAllHistory()" class="w-full flex items-center justify-center gap-2 text-slate-400 hover:text-red-500 py-3 transition-colors font-bold text-xs">
+                <i class="fas fa-trash-alt"></i> 清除所有紀錄
             </button>
         </div>
-    </div>
-    <nav id="mainNav" class="flex-grow px-3 space-y-1 overflow-y-auto no-scrollbar">
-        <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all text-sm font-medium">
-            <i class="fas fa-th-large w-5 text-center"></i> 課程總覽
-        </a>
-        <a href="remedial.html" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-50 text-blue-600 font-bold shadow-sm transition-all text-sm">
-             <i class="fas fa-book-medical w-5 text-center"></i> 錯題補救
-        </a>
-        <a href="analysis.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all text-sm font-medium">
-            <i class="fas fa-chart-pie w-5 text-center"></i> 學習分析
-        </a>
-        <a href="forum.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all text-sm font-medium">
-            <i class="fas fa-comments w-5 text-center text-blue-600"></i> 解題論壇
-        </a>
-    </nav>
-    <div class="p-4 border-t border-slate-50">
-        <button onclick="Auth.logout()" class="w-full flex items-center justify-center gap-2 text-slate-400 hover:text-red-500 py-3 transition-colors font-bold text-xs">
-            <i class="fas fa-sign-out-alt"></i> 登出系統
-        </button>
-    </div>
-</aside>
+    </aside>
 
     <main class="flex-grow flex flex-col h-full relative overflow-hidden">
-        <div class="bg-white/80 backdrop-blur-md border-b border-gray-200 p-4 md:p-6 z-10 sticky top-0 flex justify-between items-center">
-            <div>
+        <div class="bg-white/80 backdrop-blur-md border-b border-gray-200 p-4 md:p-6 z-10 sticky top-0">
+            <div class="flex justify-between items-center mb-4">
                 <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-3">
-                    <span class="w-2 h-8 bg-red-500 rounded-full"></span>
-                    個人錯題本
+                    <span class="w-2 h-8 bg-blue-500 rounded-full"></span>
+                    學習歷程與錯題
                 </h1>
-                <p class="text-sm text-gray-500 mt-1 pl-5">所有曾經答錯的題目都在這裡</p>
+                <a href="dashboard.html" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg font-bold transition text-sm">
+                    <i class="fas fa-arrow-left mr-2"></i>返回
+                </a>
             </div>
-            <a href="dashboard.html" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg font-bold transition">
-                <i class="fas fa-arrow-left mr-2"></i>返回
-            </a>
+            
+            <div class="flex space-x-6 border-b border-gray-200">
+                <button onclick="switchTab('history')" id="tab-history" class="pb-3 px-2 tab-active transition">
+                    <i class="fas fa-list-ul mr-2"></i> 考試紀錄 (<span id="historyCount">0</span>)
+                </button>
+                <button onclick="switchTab('wrong')" id="tab-wrong" class="pb-3 px-2 tab-inactive transition">
+                    <i class="fas fa-times-circle mr-2"></i> 錯題集錦 (<span id="wrongCount">0</span>)
+                </button>
+            </div>
         </div>
 
-        <div class="flex-grow overflow-y-auto p-4 md:p-8 scroll-smooth bg-slate-50" id="mainContent">
+        <div class="flex-grow overflow-y-auto p-4 md:p-8 scroll-smooth bg-slate-50">
             <div class="max-w-4xl mx-auto pb-10">
                 
-                <div class="grid grid-cols-3 gap-4 mb-8">
-                    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm text-center">
-                        <div class="text-xs text-gray-500 font-bold mb-1">累積錯題</div>
-                        <div class="text-3xl font-extrabold text-gray-800" id="totalWrong">0</div>
-                    </div>
-                    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm text-center">
-                        <div class="text-xs text-gray-500 font-bold mb-1">資料來源</div>
-                        <div class="text-3xl font-extrabold text-blue-600" id="sourceCount">0</div>
-                    </div>
-                    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm text-center">
-                        <div class="text-xs text-gray-500 font-bold mb-1">已移除</div>
-                        <div class="text-3xl font-extrabold text-green-600" id="clearedCount">0</div>
+                <div id="historyView" class="fade-in">
+                    <div id="historyList" class="space-y-4"></div>
+                    <div id="historyEmpty" class="hidden text-center py-20 text-gray-400">
+                        <i class="fas fa-history text-5xl mb-4"></i>
+                        <p>目前沒有任何考試紀錄</p>
                     </div>
                 </div>
 
-                <div id="wrongListContainer" class="space-y-6"></div>
-
-                <div id="emptyState" class="hidden flex flex-col items-center justify-center py-20 text-center">
-                    <div class="w-32 h-32 bg-gray-100 rounded-full flex items-center justify-center text-5xl text-gray-300 mb-6">
-                        <i class="fas fa-check-double"></i>
+                <div id="wrongView" class="hidden fade-in">
+                    <div id="wrongList" class="space-y-6"></div>
+                    <div id="wrongEmpty" class="hidden text-center py-20 text-gray-400">
+                        <i class="fas fa-check-circle text-5xl mb-4"></i>
+                        <p>太棒了！目前沒有錯題需要複習</p>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-700 mb-2">目前沒有錯題紀錄</h3>
-                    <p class="text-gray-500 mb-6">太強了！或者您還沒開始考試？<br>點擊左下角「寫入測試資料」試試看。</p>
-                    <a href="dashboard.html" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition shadow-lg">
-                        前往測驗
-                    </a>
                 </div>
 
             </div>
@@ -111,191 +95,207 @@
     </main>
 
     <script>
-        // ★★★ 核心邏輯：暴力掃描所有 Key ★★★
+        let historyDB = [];
         let wrongDB = [];
-        let allKeys = []; // 用來存所有掃描到的 key
+        let historyKey = "";
+        let wrongKey = "";
 
-        function loadAllWrongQuestions() {
-            wrongDB = [];
-            allKeys = [];
+        // 初始化
+        function init() {
+            const user = Auth.getCurrentUser();
+            if (user) document.getElementById('sideUserName').textContent = user.name;
             
-            // 掃描 localStorage 中所有以 "wrong_questions_" 開頭的 key
-            // 不管你是 guest 還是 user123，全部抓出來
+            // 設定 Key
+            historyKey = user ? `history_${user.username}` : `history_guest`;
+            wrongKey = user ? `wrong_questions_${user.username}` : `wrong_questions_guest`;
+
+            // 暴力掃描 (以防 Key 不一致)
+            loadData();
+            
+            // 渲染
+            renderHistory();
+            renderWrong();
+            
+            // 更新計數
+            document.getElementById('historyCount').textContent = historyDB.length;
+            document.getElementById('wrongCount').textContent = wrongDB.length;
+        }
+
+        // 資料讀取 (包含暴力掃描)
+        function loadData() {
+            historyDB = [];
+            wrongDB = [];
+
+            // 掃描所有 History Key
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
-                if (key.startsWith("wrong_questions_")) {
-                    allKeys.push(key);
+                if (key.startsWith("history_")) {
                     try {
                         const data = JSON.parse(localStorage.getItem(key));
-                        if (Array.isArray(data)) {
-                            // 加上來源標記，方便 debug
-                            data.forEach(q => q._sourceKey = key);
-                            wrongDB = wrongDB.concat(data);
-                        }
-                    } catch (e) {
-                        console.error("解析錯誤:", key, e);
-                    }
+                        if (Array.isArray(data)) historyDB = historyDB.concat(data);
+                    } catch(e) {}
+                }
+                if (key.startsWith("wrong_questions_")) {
+                    try {
+                        const data = JSON.parse(localStorage.getItem(key));
+                        if (Array.isArray(data)) wrongDB = wrongDB.concat(data);
+                    } catch(e) {}
                 }
             }
-
-            // 去除重複題目 (根據題目內容去重)
-            const uniqueDB = [];
-            const seenQuestions = new Set();
+            
+            // 排序：最新的在最上面
+            historyDB.sort((a, b) => b.id - a.id);
+            
+            // 錯題去重
+            const uniqueWrongs = [];
+            const seen = new Set();
             wrongDB.forEach(q => {
-                if (!seenQuestions.has(q.question)) {
-                    seenQuestions.add(q.question);
-                    uniqueDB.push(q);
+                if(!seen.has(q.question)) {
+                    seen.add(q.question);
+                    uniqueWrongs.push(q);
                 }
             });
-            wrongDB = uniqueDB;
-
-            console.log(`🔍 掃描到 ${allKeys.length} 個錯題庫，共 ${wrongDB.length} 題`);
-            
-            updateStats();
-            renderQuestions();
+            wrongDB = uniqueWrongs;
         }
 
-        function updateStats() {
-            document.getElementById('totalWrong').textContent = wrongDB.length;
-            document.getElementById('sourceCount').textContent = allKeys.length; // 顯示有幾個帳號的紀錄
-            
-            if (wrongDB.length === 0) {
-                document.getElementById('emptyState').classList.remove('hidden');
-                document.getElementById('wrongListContainer').innerHTML = '';
-            } else {
-                document.getElementById('emptyState').classList.add('hidden');
-            }
-        }
-
-        function renderQuestions() {
-            const container = document.getElementById('wrongListContainer');
+        // 渲染考試紀錄
+        function renderHistory() {
+            const container = document.getElementById('historyList');
+            const empty = document.getElementById('historyEmpty');
             container.innerHTML = '';
 
-            wrongDB.forEach((q, idx) => {
-                let optionsHtml = '';
-                if (q.options && Array.isArray(q.options)) {
-                    q.options.forEach((opt, i) => {
-                        let style = "bg-gray-50 border-gray-200 text-gray-600";
-                        let icon = String.fromCharCode(65+i);
-                        let status = "";
+            if (historyDB.length === 0) {
+                empty.classList.remove('hidden');
+                return;
+            }
+            empty.classList.add('hidden');
 
-                        if (i === q.answer) { 
-                            style = "bg-green-50 border-green-300 text-green-800 ring-1 ring-green-200";
-                            status = `<span class="ml-auto text-xs font-bold text-green-600 px-2 py-1 bg-white rounded border border-green-200">正解</span>`;
-                        } else if (i === q.yourAns) { 
-                            style = "bg-red-50 border-red-300 text-red-800 ring-1 ring-red-200";
-                            status = `<span class="ml-auto text-xs font-bold text-red-500 px-2 py-1 bg-white rounded border border-red-200">誤答</span>`;
-                        }
+            historyDB.forEach(record => {
+                let scoreColor = "text-gray-600";
+                if (record.score >= 90) scoreColor = "text-green-600";
+                else if (record.score < 60) scoreColor = "text-red-600";
 
-                        optionsHtml += `
-                            <div class="p-3 rounded-lg border flex items-center gap-3 mb-2 ${style}">
-                                <div class="w-6 h-6 rounded-full bg-white flex items-center justify-center font-bold text-xs border shadow-sm">${icon}</div>
-                                <div class="flex-grow text-sm font-medium">${opt}</div>
-                                ${status}
-                            </div>`;
-                    });
-                }
-
-                const explanation = (q.explanation && Array.isArray(q.explanation)) 
-                    ? q.explanation.join('<br>') 
-                    : (q.explanation || "暫無解析");
-
-                const cardHtml = `
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden fade-in" style="animation-delay: ${idx * 0.05}s">
-                        <div class="p-6 border-b border-gray-100 relative">
-                            <button onclick="removeQuestion(${idx})" class="absolute top-4 right-4 text-gray-400 hover:text-green-600 transition" title="我學會了，移除此題">
-                                <i class="fas fa-check-circle text-xl"></i>
-                            </button>
-                            <div class="flex items-center gap-2 mb-4">
-                                <span class="bg-red-100 text-red-600 text-xs font-bold px-2 py-1 rounded">錯題</span>
-                                <span class="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-1 rounded">${q.concept || '綜合'}</span>
-                                <span class="text-xs text-gray-300 ml-auto">來源: ${q._sourceKey || 'unknown'}</span>
+                const html = `
+                    <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition flex items-center justify-between cursor-pointer" onclick="viewResult(${record.id})">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-blue-500 font-bold text-lg">
+                                ${record.score}
                             </div>
-                            <h3 class="font-bold text-gray-800 text-lg mb-6 leading-relaxed">${q.question}</h3>
-                            <div class="space-y-1">
-                                ${optionsHtml}
+                            <div>
+                                <h3 class="font-bold text-gray-800">${record.title}</h3>
+                                <p class="text-xs text-gray-500">${record.date} • 答對 ${record.correctCount}/${record.totalCount}</p>
                             </div>
                         </div>
-                        <div class="bg-slate-50 p-5 text-sm text-slate-800 border-t border-slate-100">
-                            <strong class="block mb-2 text-indigo-600 flex items-center gap-2">
-                                <i class="fas fa-lightbulb"></i> 解析重點
-                            </strong>
-                            <div class="leading-relaxed pl-6 border-l-2 border-indigo-200">
-                                ${explanation}
-                            </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600">${record.subject}</span>
+                            <i class="fas fa-chevron-right text-gray-300"></i>
                         </div>
                     </div>
                 `;
-                container.insertAdjacentHTML('beforeend', cardHtml);
+                container.insertAdjacentHTML('beforeend', html);
             });
+        }
 
+        // 渲染錯題
+        function renderWrong() {
+            const container = document.getElementById('wrongList');
+            const empty = document.getElementById('wrongEmpty');
+            container.innerHTML = '';
+
+            if (wrongDB.length === 0) {
+                empty.classList.remove('hidden');
+                return;
+            }
+            empty.classList.add('hidden');
+
+            wrongDB.forEach((q, idx) => {
+                let optionsHtml = '';
+                q.options.forEach((opt, i) => {
+                    let style = "bg-white border-gray-200 text-gray-600";
+                    let icon = String.fromCharCode(65+i);
+                    if (i === q.answer) style = "bg-green-50 border-green-300 text-green-800";
+                    else if (i === q.yourAns) style = "bg-red-50 border-red-300 text-red-800";
+                    optionsHtml += `<div class="p-2 border rounded mb-1 flex items-center gap-2 ${style}"><span class="font-bold">${icon}</span> ${opt}</div>`;
+                });
+
+                const explain = (q.explanation && Array.isArray(q.explanation)) ? q.explanation.join('<br>') : q.explanation;
+
+                const html = `
+                    <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="font-bold text-gray-800 text-lg">${q.question}</h3>
+                            <button onclick="removeQuestion('${q.question}')" class="text-gray-400 hover:text-green-600"><i class="fas fa-check-circle text-xl"></i></button>
+                        </div>
+                        <div class="space-y-1 mb-4 text-sm">${optionsHtml}</div>
+                        <div class="bg-slate-50 p-4 rounded text-sm text-slate-700 border-l-4 border-indigo-400">
+                            <strong>解析：</strong><br>${explain}
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', html);
+            });
             if (window.MathJax) MathJax.typesetPromise();
         }
 
-        // 移除題目：從它所屬的原始 Key 中刪除
-        window.removeQuestion = function(index) {
-            if(!confirm("確定已經學會這題了嗎？移除後將不再顯示。")) return;
-            
-            const targetQ = wrongDB[index];
-            const sourceKey = targetQ._sourceKey;
-
-            if (sourceKey) {
-                let db = JSON.parse(localStorage.getItem(sourceKey) || "[]");
-                // 過濾掉該題
-                db = db.filter(q => q.question !== targetQ.question);
-                localStorage.setItem(sourceKey, JSON.stringify(db));
+        // 點擊紀錄 -> 跳轉到分析頁面
+        window.viewResult = function(recordId) {
+            // 找出該筆紀錄
+            const record = historyDB.find(r => r.id === recordId);
+            if (record) {
+                // 將其設定為「當前要查看的結果」
+                localStorage.setItem('examResult', JSON.stringify(record));
+                window.location.href = "analysis.html";
             }
-
-            // 更新畫面
-            let count = parseInt(document.getElementById('clearedCount').textContent) || 0;
-            document.getElementById('clearedCount').textContent = count + 1;
-            
-            // 重新讀取
-            loadAllWrongQuestions();
         }
 
-        window.clearWrongDB = function() {
-            if(!confirm("確定清空所有錯題？")) return;
-            allKeys.forEach(key => localStorage.removeItem(key));
-            loadAllWrongQuestions();
-        }
-
-        // ★★★ 測試資料注入器 (Force Inject) ★★★
-        window.injectTestData = function() {
-            const fakeData = [
-                {
-                    question: "【測試題】1 + 1 = ?",
-                    options: ["1", "2", "3", "4"],
-                    answer: 1,
-                    yourAns: 0,
-                    concept: "基本運算",
-                    explanation: ["正確答案是 2", "這是測試資料"],
-                    t: ["測試", "數學"]
-                },
-                {
-                    question: "【測試題】英文 Apple 的意思是？",
-                    options: ["香蕉", "蘋果", "橘子", "西瓜"],
-                    answer: 1,
-                    yourAns: 2,
-                    concept: "單字",
-                    explanation: ["Apple = 蘋果"],
-                    t: ["測試", "英文"]
+        // 移除錯題
+        window.removeQuestion = function(qText) {
+            if(!confirm("確定移除此題？")) return;
+            // 從所有相關 Key 中移除該題
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith("wrong_questions_")) {
+                    let db = JSON.parse(localStorage.getItem(key) || "[]");
+                    db = db.filter(q => q.question !== qText);
+                    localStorage.setItem(key, JSON.stringify(db));
                 }
-            ];
-            
-            // 強制寫入訪客錯題本
-            let db = JSON.parse(localStorage.getItem('wrong_questions_guest') || "[]");
-            localStorage.setItem('wrong_questions_guest', JSON.stringify([...fakeData, ...db]));
-            
-            alert("已寫入 2 題測試資料！頁面將重新整理。");
+            }
             location.reload();
         }
 
-        // 初始化
-        const user = Auth.getCurrentUser();
-        if (user) document.getElementById('sideUserName').textContent = user.name;
-        loadAllWrongQuestions(); // 啟動掃描
+        // 清除所有資料
+        window.clearAllHistory = function() {
+            if(!confirm("確定要刪除所有考試與錯題紀錄？此動作無法復原！")) return;
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith("history_") || key.startsWith("wrong_questions_")) {
+                    localStorage.removeItem(key);
+                }
+            }
+            location.reload();
+        }
 
+        // 分頁切換
+        window.switchTab = function(tab) {
+            const histBtn = document.getElementById('tab-history');
+            const wrongBtn = document.getElementById('tab-wrong');
+            const histView = document.getElementById('historyView');
+            const wrongView = document.getElementById('wrongView');
+
+            if (tab === 'history') {
+                histBtn.className = "pb-3 px-2 tab-active transition";
+                wrongBtn.className = "pb-3 px-2 tab-inactive transition";
+                histView.classList.remove('hidden');
+                wrongView.classList.add('hidden');
+            } else {
+                histBtn.className = "pb-3 px-2 tab-inactive transition";
+                wrongBtn.className = "pb-3 px-2 tab-active transition";
+                histView.classList.add('hidden');
+                wrongView.classList.remove('hidden');
+            }
+        }
+
+        init();
     </script>
 </body>
 </html>
