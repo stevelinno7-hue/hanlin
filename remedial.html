@@ -3,156 +3,222 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>錯題補救庫 - 翰林雲端學院</title>
+    <title>錯題補救 - 翰林雲端學院</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
 
     <style>
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f8fafc; color: #334155; }
-        
-        /* 修正為截圖中的淺藍色風格 */
-        .nav-item-active { 
-            background-color: #eff6ff !important; /* bg-blue-50 */
-            color: #2563eb !important;            /* text-blue-600 */
-            font-weight: 600;
-        }
-        
-        .nav-item-inactive {
-            color: #64748b; /* text-slate-500 */
-        }
-        
-        .nav-item-inactive:hover {
-            background-color: #f8fafc;
-            color: #1e293b;
-        }
-
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .card-shadow { box-shadow: 0 1px 3px rgba(0,0,0,0.02), 0 4px 12px rgba(0,0,0,0.03); }
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f8fafc; }
+        .fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
     </style>
-    
+
     <script src="mockdata/users.js"></script>
     <script src="assets/js/auth.js"></script>
 </head>
 <body class="h-screen flex overflow-hidden">
-
-<aside class="w-64 bg-white border-r border-slate-100 hidden lg:flex flex-col z-20 shrink-0 h-screen sticky top-0">
-    <div class="h-16 flex items-center px-6 border-b border-slate-50">
-        <div class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm mr-2 shadow-sm">翰</div>
-        <span class="text-lg font-bold text-slate-800 tracking-tight">雲端學院</span>
-    </div>
-    <div class="px-4 py-6">
-        <div class="bg-white border border-slate-50 rounded-2xl p-6 text-center shadow-sm">
-            <div class="w-16 h-16 mx-auto bg-blue-50 rounded-full flex items-center justify-center text-2xl text-blue-500 mb-3 border-2 border-white shadow-sm">
-                <i class="fas fa-user-graduate"></i>
+    <aside class="w-64 bg-white border-r border-slate-100 hidden lg:flex flex-col z-20 shrink-0 h-screen sticky top-0">
+        <div class="h-16 flex items-center px-6 border-b border-slate-50">
+            <div class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm mr-2">翰</div>
+            <span class="text-lg font-bold text-slate-800">雲端學院</span>
+        </div>
+        <div class="p-6 text-center">
+            <div class="w-16 h-16 mx-auto bg-blue-50 rounded-full flex items-center justify-center text-2xl text-blue-500 mb-3 border-2 border-slate-100">
+                <i class="fas fa-book-medical"></i>
             </div>
-            <h3 class="font-bold text-slate-800 text-base" id="sideUserName">--</h3>
-            <div class="text-[11px] text-slate-400 mt-1 mb-3 font-medium uppercase tracking-wider" id="sideUserRole">--</div>
-            <button onclick="openProfileModal()" class="text-[10px] font-bold text-slate-400 border border-slate-200 px-3 py-1.5 rounded-full hover:bg-slate-50 hover:text-slate-600 transition-all">
-                <i class="fas fa-pen mr-1"></i> 編輯年級
+            <h3 class="font-bold text-slate-800" id="sideUserName">訪客</h3>
+            <p class="text-xs text-slate-400 mt-1">錯題補救中心</p>
+        </div>
+        <nav class="flex-grow px-3 space-y-1">
+            <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition font-medium">
+                <i class="fas fa-th-large w-5 text-center"></i> 課程總覽
+            </a>
+            <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-red-50 text-red-600 font-bold shadow-sm">
+                <i class="fas fa-notes-medical w-5 text-center"></i> 錯題補救
+            </a>
+        </nav>
+        <div class="p-4 border-t border-slate-50">
+            <button onclick="clearWrongDB()" class="w-full flex items-center justify-center gap-2 text-slate-400 hover:text-red-500 py-3 transition-colors font-bold text-xs">
+                <i class="fas fa-trash-alt"></i> 清空錯題本
             </button>
         </div>
-    </div>
-    <nav id="mainNav" class="flex-grow px-3 space-y-1 overflow-y-auto no-scrollbar">
-        <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all text-sm font-medium">
-            <i class="fas fa-th-large w-5 text-center"></i> 課程總覽
-        </a>
-        <a href="remedial.html" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-50 text-blue-600 font-bold shadow-sm transition-all text-sm">
-            <i class="fas fa-book-medical w-5 text-center text-blue-600"></i> 錯題補救
-        </a>
-        <a href="analysis.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all text-sm font-medium">
-            <i class="fas fa-chart-pie w-5 text-center"></i> 學習分析
-        </a>
-        <a href="forum.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all text-sm font-medium">
-            <i class="fas fa-comments w-5 text-center"></i> 解題論壇
-        </a>
-    </nav>
-    <div class="p-4 border-t border-slate-50">
-        <button onclick="Auth.logout()" class="w-full flex items-center justify-center gap-2 text-slate-400 hover:text-red-500 py-3 transition-colors font-bold text-xs">
-            <i class="fas fa-sign-out-alt"></i> 登出系統
-        </button>
-    </div>
-</aside>
-    <main class="flex-grow flex flex-col h-full overflow-hidden">
-        <header class="h-16 bg-white border-b border-slate-100 flex items-center justify-between px-8 shrink-0">
-            <div class="flex items-center gap-3">
-                <h2 class="text-lg font-bold text-slate-800">錯題補救庫</h2>
-                <span class="text-slate-200">|</span>
-                <p class="text-[10px] text-slate-400 font-bold tracking-widest uppercase">Error Review Bank</p>
-            </div>
-            <div class="flex items-center">
-                <div class="bg-red-50 text-red-500 px-4 py-1.5 rounded-full text-xs font-bold border border-red-100 flex items-center">
-                    <span class="w-1.5 h-1.5 bg-red-500 rounded-full mr-2"></span>
-                    累積錯題：<span id="totalWrong" class="ml-1">0</span>
-                </div>
-            </div>
-        </header>
+    </aside>
 
-        <div class="flex-grow overflow-y-auto p-8 no-scrollbar">
-            <div class="max-w-4xl mx-auto space-y-6 pb-20" id="wrongContainer">
+    <main class="flex-grow flex flex-col h-full relative overflow-hidden">
+        <div class="bg-white/80 backdrop-blur-md border-b border-gray-200 p-4 md:p-6 z-10 sticky top-0 flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-3">
+                    <span class="w-2 h-8 bg-red-500 rounded-full"></span>
+                    個人錯題本
+                </h1>
+                <p class="text-sm text-gray-500 mt-1 pl-5">累積錯誤是學習最好的養分</p>
+            </div>
+            <a href="dashboard.html" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg font-bold transition">
+                <i class="fas fa-arrow-left mr-2"></i>返回
+            </a>
+        </div>
+
+        <div class="flex-grow overflow-y-auto p-4 md:p-8 scroll-smooth bg-slate-50" id="mainContent">
+            <div class="max-w-4xl mx-auto pb-10">
+                
+                <div class="grid grid-cols-3 gap-4 mb-8">
+                    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm text-center">
+                        <div class="text-xs text-gray-500 font-bold mb-1">累積錯題</div>
+                        <div class="text-3xl font-extrabold text-gray-800" id="totalWrong">0</div>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm text-center">
+                        <div class="text-xs text-gray-500 font-bold mb-1">待複習</div>
+                        <div class="text-3xl font-extrabold text-red-600" id="reviewCount">0</div>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm text-center">
+                        <div class="text-xs text-gray-500 font-bold mb-1">已移除</div>
+                        <div class="text-3xl font-extrabold text-green-600" id="clearedCount">0</div>
+                    </div>
                 </div>
+
+                <div id="wrongListContainer" class="space-y-6">
+                    </div>
+
+                <div id="emptyState" class="hidden flex flex-col items-center justify-center py-20 text-center">
+                    <div class="w-32 h-32 bg-gray-100 rounded-full flex items-center justify-center text-5xl text-gray-300 mb-6">
+                        <i class="fas fa-check-double"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-700 mb-2">目前沒有錯題紀錄</h3>
+                    <p class="text-gray-500 mb-6">快去參加測驗，系統會自動收集您的弱點！</p>
+                    <a href="dashboard.html" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition shadow-lg">
+                        前往測驗
+                    </a>
+                </div>
+
+            </div>
         </div>
     </main>
 
     <script>
-        // 保持原有的邏輯代碼
-        const currentUser = Auth.requireLogin();
-        if (currentUser) {
-            document.getElementById('sideUserName').textContent = currentUser.name || currentUser.username;
-            const storageKey = `history_${currentUser.username}`;
-            const history = JSON.parse(localStorage.getItem(storageKey) || "[]");
-            let allWrong = [];
-            history.forEach(exam => {
-                if (exam.wrongList) {
-                    exam.wrongList.forEach(q => allWrong.push({...q, date: exam.date}));
+        // 1. 取得使用者與錯題 Key
+        const user = Auth.getCurrentUser();
+        if (user) document.getElementById('sideUserName').textContent = user.name;
+        
+        const wrongKey = user ? `wrong_questions_${user.username}` : `wrong_questions_guest`;
+        
+        // 2. 讀取資料
+        let wrongDB = [];
+        try {
+            wrongDB = JSON.parse(localStorage.getItem(wrongKey) || "[]");
+        } catch(e) {
+            console.error("錯題本讀取失敗", e);
+            wrongDB = [];
+        }
+
+        // 3. 初始化畫面
+        updateStats();
+        renderQuestions();
+
+        function updateStats() {
+            document.getElementById('totalWrong').textContent = wrongDB.length;
+            document.getElementById('reviewCount').textContent = wrongDB.length;
+            
+            if (wrongDB.length === 0) {
+                document.getElementById('emptyState').classList.remove('hidden');
+                document.getElementById('wrongListContainer').innerHTML = '';
+            } else {
+                document.getElementById('emptyState').classList.add('hidden');
+            }
+        }
+
+        function renderQuestions() {
+            const container = document.getElementById('wrongListContainer');
+            container.innerHTML = '';
+
+            wrongDB.forEach((q, idx) => {
+                let optionsHtml = '';
+                // 處理選項顯示
+                if (q.options && Array.isArray(q.options)) {
+                    q.options.forEach((opt, i) => {
+                        let style = "bg-gray-50 border-gray-200 text-gray-600";
+                        let icon = String.fromCharCode(65+i);
+                        let status = "";
+
+                        if (i === q.answer) { 
+                            style = "bg-green-50 border-green-300 text-green-800 ring-1 ring-green-200";
+                            status = `<span class="ml-auto text-xs font-bold text-green-600 px-2 py-1 bg-white rounded border border-green-200">正解</span>`;
+                        } else if (i === q.yourAns) { 
+                            style = "bg-red-50 border-red-300 text-red-800 ring-1 ring-red-200";
+                            status = `<span class="ml-auto text-xs font-bold text-red-500 px-2 py-1 bg-white rounded border border-red-200">誤答</span>`;
+                        }
+
+                        optionsHtml += `
+                            <div class="p-3 rounded-lg border flex items-center gap-3 mb-2 ${style}">
+                                <div class="w-6 h-6 rounded-full bg-white flex items-center justify-center font-bold text-xs border shadow-sm">${icon}</div>
+                                <div class="flex-grow text-sm font-medium">${opt}</div>
+                                ${status}
+                            </div>`;
+                    });
                 }
+
+                // 解析文字
+                const explanation = (q.explanation && Array.isArray(q.explanation)) 
+                    ? q.explanation.join('<br>') 
+                    : (q.explanation || "暫無解析");
+
+                const cardHtml = `
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden fade-in" style="animation-delay: ${idx * 0.05}s">
+                        <div class="p-6 border-b border-gray-100 relative">
+                            <button onclick="removeQuestion(${idx})" class="absolute top-4 right-4 text-gray-400 hover:text-green-600 transition" title="我學會了，移除此題">
+                                <i class="fas fa-check-circle text-xl"></i>
+                            </button>
+                            <div class="flex items-center gap-2 mb-4">
+                                <span class="bg-red-100 text-red-600 text-xs font-bold px-2 py-1 rounded">錯題</span>
+                                <span class="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-1 rounded">${q.concept || '綜合'}</span>
+                            </div>
+                            <h3 class="font-bold text-gray-800 text-lg mb-6 leading-relaxed">${q.question}</h3>
+                            <div class="space-y-1">
+                                ${optionsHtml}
+                            </div>
+                        </div>
+                        <div class="bg-slate-50 p-5 text-sm text-slate-800 border-t border-slate-100">
+                            <strong class="block mb-2 text-indigo-600 flex items-center gap-2">
+                                <i class="fas fa-lightbulb"></i> 解析重點
+                            </strong>
+                            <div class="leading-relaxed pl-6 border-l-2 border-indigo-200">
+                                ${explanation}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', cardHtml);
             });
 
-            document.getElementById('totalWrong').textContent = allWrong.length;
-            const container = document.getElementById('wrongContainer');
+            if (window.MathJax) MathJax.typesetPromise();
+        }
 
-            if (allWrong.length === 0) {
-                container.innerHTML = `
-                    <div class="flex flex-col items-center justify-center py-32 text-slate-300">
-                        <i class="fas fa-file-circle-check text-6xl mb-6 opacity-20"></i>
-                        <p class="font-bold text-lg">目前沒有錯題紀錄</p>
-                    </div>`;
-            } else {
-                container.innerHTML = '';
-                allWrong.reverse().forEach((q, i) => {
-                    const explain = q.explanation ? (Array.isArray(q.explanation) ? q.explanation.join('') : q.explanation) : "無解析";
-                    container.innerHTML += `
-                        <div class="bg-white p-8 rounded-3xl card-shadow border border-slate-50 transition-all duration-300">
-                            <div class="flex justify-between items-center mb-6">
-                                <span class="bg-slate-100 text-slate-500 text-[10px] font-bold px-3 py-1 rounded-md uppercase tracking-wider">${q.concept || '綜合練習'}</span>
-                                <span class="text-slate-300 text-xs"><i class="far fa-calendar-alt mr-1"></i> ${q.date.split(' ')[0]}</span>
-                            </div>
-                            <h3 class="font-bold text-slate-800 text-lg mb-8 leading-relaxed">${q.question}</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                                <div class="bg-red-50/50 p-4 rounded-2xl border border-red-50">
-                                    <span class="text-[10px] font-bold text-red-400 block mb-1">您的回答</span>
-                                    <span class="text-red-600 font-bold">${q.options[q.yourAns] || '未作答'}</span>
-                                </div>
-                                <div class="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-50">
-                                    <span class="text-[10px] font-bold text-emerald-400 block mb-1">正確答案</span>
-                                    <span class="text-emerald-600 font-bold">${q.options[q.answer]}</span>
-                                </div>
-                            </div>
-                            <div class="bg-slate-50/50 rounded-2xl p-5">
-                                <button onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('i').classList.toggle('rotate-180')" 
-                                        class="w-full flex items-center justify-between text-slate-500 font-bold text-sm">
-                                    <span class="flex items-center"><i class="fas fa-lightbulb text-amber-400 mr-2"></i> 解析說明</span>
-                                    <i class="fas fa-chevron-down transition-transform text-xs"></i>
-                                </button>
-                                <div class="hidden mt-4 text-slate-600 leading-relaxed text-sm border-t border-slate-200/50 pt-4">
-                                    ${explain}
-                                </div>
-                            </div>
-                        </div>`;
-                });
-                if (window.MathJax) MathJax.typesetPromise();
-            }
+        // 移除單一題目
+        window.removeQuestion = function(index) {
+            if(!confirm("確定已經學會這題了嗎？移除後將不再顯示。")) return;
+            
+            wrongDB.splice(index, 1); // 刪除該題
+            localStorage.setItem(wrongKey, JSON.stringify(wrongDB)); // 存回
+            
+            // 更新畫面
+            let count = parseInt(document.getElementById('clearedCount').textContent) || 0;
+            document.getElementById('clearedCount').textContent = count + 1;
+            updateStats();
+            renderQuestions();
+        }
+
+        // 清空所有
+        window.clearWrongDB = function() {
+            if(!confirm("確定要清空所有錯題紀錄嗎？此動作無法復原！")) return;
+            localStorage.removeItem(wrongKey);
+            wrongDB = [];
+            updateStats();
+            renderQuestions();
         }
     </script>
 </body>
