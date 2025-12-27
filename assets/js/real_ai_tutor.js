@@ -84,6 +84,7 @@ const RealAITutor = {
     /* ===============================
      * Main Entry Point: askGemini
      * =============================== */
+    // This is the function your forum.html is trying to call!
     async askGemini(title, content) {
         // 1. Build Prompt
         const prompt = this.constructPrompt(title, content);
