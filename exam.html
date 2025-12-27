@@ -17,18 +17,19 @@
         .option-card.selected { border-color: #2563eb; background-color: #eff6ff; color: #1e3a8a; font-weight: 500; }
         .fade-in { animation: fadeIn 0.3s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Modal 動畫 */
+        .modal-enter { animation: modalIn 0.2s ease-out forwards; }
+        @keyframes modalIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
     </style>
 
     <script src="mockdata/users.js"></script>
     <script src="assets/js/auth.js"></script>
     <script src="assets/js/generator_engine.js"></script>
-    
     <script src="mockdata/generator_engine_polyfill.js"></script>
-
     <script src="mockdata/AutoTemplateFissionFactory.js"></script>
     <script src="mockdata/auto_fission_bootstrap.js"></script>
     <script src="mockdata/paper_generator.js"></script>
-
     <script src="mockdata/curriculum_integrated.js"></script>
 
     <script src="mockdata/templates_math_algebra_geometry.js"></script>
@@ -63,7 +64,7 @@
                     <i class="far fa-clock mr-2"></i>
                     <span id="timer" class="font-mono font-bold text-lg">00:00</span>
                 </div>
-                <button id="submitBtnTop" onclick="finishExam()" class="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded-lg font-bold text-sm shadow-md">
+                <button id="submitBtnTop" onclick="trySubmit()" class="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded-lg font-bold text-sm shadow-md transition transform hover:scale-105">
                     交卷
                 </button>
             </div>
@@ -105,6 +106,42 @@
         </div>
     </main>
 
+    <div id="submitModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm transition-opacity">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 mx-4 modal-enter transform">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl text-blue-500">
+                    <i class="fas fa-clipboard-check"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800">確認繳交考卷？</h3>
+                <p class="text-gray-500 text-sm mt-2">交卷後將無法修改答案，並立即計算成績。</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="bg-gray-50 p-4 rounded-xl text-center border border-gray-100">
+                    <div class="text-xs text-gray-500 font-bold mb-1">已作答</div>
+                    <div class="text-2xl font-bold text-blue-600" id="modalAnswered">0</div>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-xl text-center border border-gray-100">
+                    <div class="text-xs text-gray-500 font-bold mb-1">未作答</div>
+                    <div class="text-2xl font-bold text-gray-400" id="modalUnanswered">0</div>
+                </div>
+            </div>
+
+            <div id="modalWarning" class="hidden bg-red-50 text-red-600 text-sm p-3 rounded-lg mb-6 flex items-center justify-center">
+                <i class="fas fa-exclamation-triangle mr-2"></i> 還有題目尚未作答喔！
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="closeSubmitModal()" class="flex-1 px-4 py-3 bg-white border border-gray-300 text-gray-700 rounded-xl font-bold hover:bg-gray-50 transition">
+                    再檢查一下
+                </button>
+                <button onclick="finalSubmit()" class="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-bold hover:from-blue-700 hover:to-blue-800 shadow-lg shadow-blue-500/30 transition transform hover:-translate-y-0.5">
+                    確認交卷
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let mockQuestions = [], currentQIndex = 0, userAnswers = [], timeLeft = 0, timerInterval;
         let examInfo = {}, timeLog = [], tabLog = [], tabLeave = null;
@@ -123,7 +160,7 @@
             setTimeout(prepareExam, 500); 
         };
 
-        // ★★★ 專注度分析：分頁切換偵測 ★★★
+        // 專注度偵測
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
                 tabLeave = Date.now();
@@ -131,13 +168,12 @@
                 const duration = (Date.now() - tabLeave) / 1000;
                 if (duration > 1) { 
                     tabLog.push(Math.round(duration));
-                    console.log(`⚠️ 切換分頁偵測：離開了 ${Math.round(duration)} 秒`);
                 }
                 tabLeave = null;
             }
         });
 
-        // 智慧重試機制
+        // 準備考試
         let retryCount = 0;
         function prepareExam() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -168,15 +204,13 @@
                 mockQuestions = window.generatePaper({ subject: subject, total: count, tags: courseTags });
             }
 
-            // 智慧重試 (Smart Retry)
             if (mockQuestions.length === 0) {
                 if (retryCount < 3) {
                     retryCount++;
-                    console.warn(`⚠️ 題目生成為空，正在重試 (${retryCount}/3)...`);
                     setTimeout(prepareExam, 1000); 
                     return;
                 } else {
-                    alert("⚠️ 題庫載入超時或無符合題目，請重新整理頁面再試一次。");
+                    alert("⚠️ 題庫載入超時，請重新整理。");
                     return;
                 }
             }
@@ -225,6 +259,7 @@
             questionStartTime = now; 
         }
 
+        // 修改導覽按鈕邏輯
         function updateNav() {
             document.getElementById('prevBtn').onclick = () => { 
                 recordTime(); 
@@ -232,8 +267,12 @@
             };
             document.getElementById('nextBtn').onclick = () => { 
                 recordTime(); 
-                if(currentQIndex < mockQuestions.length - 1) { currentQIndex++; renderQuestion(); updateNav(); }
-                else finishExam();
+                if(currentQIndex < mockQuestions.length - 1) { 
+                    currentQIndex++; renderQuestion(); updateNav(); 
+                } else {
+                    // 最後一題按「交卷」時觸發 Modal
+                    trySubmit();
+                }
             };
             document.getElementById('nextBtn').textContent = (currentQIndex === mockQuestions.length - 1) ? '交卷' : '下一題';
         }
@@ -245,13 +284,43 @@
                 const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
                 const s = (timeLeft % 60).toString().padStart(2, '0');
                 document.getElementById('timer').textContent = `${m}:${s}`;
-                if (timeLeft <= 0) finishExam();
+                if (timeLeft <= 0) finalSubmit(); // 時間到強制交卷
             }, 1000);
         }
 
-      function finishExam() {
-            recordTime(); 
-            if (!confirm("確定交卷？")) return;
+        // ★★★ 新增：打開交卷確認視窗 ★★★
+        function trySubmit() {
+            recordTime(); // 記錄當下時間
+            
+            // 計算答題狀況
+            const answeredCount = userAnswers.filter(a => a !== null).length;
+            const unansweredCount = mockQuestions.length - answeredCount;
+
+            // 更新 Modal 內容
+            document.getElementById('modalAnswered').textContent = answeredCount;
+            const unEl = document.getElementById('modalUnanswered');
+            unEl.textContent = unansweredCount;
+            
+            // 根據是否有未答題，改變樣式
+            if (unansweredCount > 0) {
+                unEl.className = "text-2xl font-bold text-red-500";
+                document.getElementById('modalWarning').classList.remove('hidden');
+            } else {
+                unEl.className = "text-2xl font-bold text-gray-400";
+                document.getElementById('modalWarning').classList.add('hidden');
+            }
+
+            // 顯示 Modal
+            document.getElementById('submitModal').classList.remove('hidden');
+        }
+
+        // ★★★ 新增：關閉交卷視窗 ★★★
+        function closeSubmitModal() {
+            document.getElementById('submitModal').classList.add('hidden');
+        }
+
+        // ★★★ 核心：最終交卷邏輯 ★★★
+        function finalSubmit() {
             clearInterval(timerInterval);
             
             let correctCount = 0;
@@ -263,10 +332,8 @@
                 else wrongList.push({ ...q, yourAns: userAnswers[idx], explanation: q.explanation });
             });
 
-            // 如果全對，當然沒有錯題
-            if (wrongList.length === 0) {
-                alert("恭喜！這次測驗您「全對」，所以錯題本不會增加題目喔！");
-            }
+            let cheatLevel = fastCount > 3 ? 'HIGH' : (fastCount > 0 ? 'MEDIUM' : 'NORMAL');
+            let tabLevel = tabLog.length > 5 ? 'HIGH' : (tabLog.length > 0 ? 'MEDIUM' : 'NORMAL');
 
             const newRecord = {
                 id: Date.now(), 
@@ -277,49 +344,28 @@
                 correctCount, 
                 totalCount: mockQuestions.length, 
                 wrongList,
-                analysis: { cheatLevel: 'NORMAL', fastCount, tabLevel: 'NORMAL', switchCount: tabLog.length, timeLog }
+                analysis: { cheatLevel, fastCount, tabLevel, switchCount: tabLog.length, timeLog }
             };
 
-            // ★★★ 身份確認與 Key 生成 ★★★
             const user = window.Auth ? window.Auth.getCurrentUser() : null;
-            // 強制指定一個 Key，確保 remedial.html 找得到
+            const historyKey = user ? `history_${user.username}` : `history_guest`;
             const wrongKey = user ? `wrong_questions_${user.username}` : `wrong_questions_guest`;
 
-            console.log(`正在寫入 Key: ${wrongKey}`);
-            console.log(`寫入的錯題數量: ${wrongList.length}`);
+            // 儲存歷史紀錄
+            let history = JSON.parse(localStorage.getItem(historyKey) || "[]");
+            history.push(newRecord);
+            localStorage.setItem(historyKey, JSON.stringify(history));
 
-            // 1. 讀取舊資料
-            let db = [];
-            try {
-                const raw = localStorage.getItem(wrongKey);
-                if (raw) db = JSON.parse(raw);
-            } catch(e) {
-                console.error("讀取失敗，重置資料庫");
-                db = [];
-            }
-
-            // 2. 合併新錯題
+            // 儲存錯題本 (去重)
             if (wrongList.length > 0) {
-                // 簡單去重：如果題目內容完全一樣就不加
+                let db = JSON.parse(localStorage.getItem(wrongKey) || "[]");
                 const newWrongs = wrongList.filter(newQ => {
                     return !db.some(oldQ => oldQ.question === newQ.question);
                 });
-                
-                const finalDB = [...newWrongs, ...db];
-                localStorage.setItem(wrongKey, JSON.stringify(finalDB));
-                
-                // ★★★ 這裡會彈出視窗證明資料已儲存 ★★★
-                alert(`系統診斷：\n已嘗試寫入 ${newWrongs.length} 題到錯題本。\n儲存位置：${wrongKey}\n目前總題數：${finalDB.length}\n\n請按確定跳轉...`);
+                if (newWrongs.length > 0) {
+                    localStorage.setItem(wrongKey, JSON.stringify([...newWrongs, ...db]));
+                }
             }
-
-            // 3. 儲存本次結果
-            localStorage.setItem('examResult', JSON.stringify(newRecord));
-            
-            // 延遲跳轉，確保資料寫入硬碟
-            setTimeout(() => {
-                window.location.href = "analysis.html";
-            }, 500);
-        }
             
             localStorage.setItem('examResult', JSON.stringify(newRecord));
             window.location.href = "analysis.html";
